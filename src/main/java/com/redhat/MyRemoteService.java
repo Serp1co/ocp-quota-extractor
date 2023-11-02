@@ -13,15 +13,8 @@ import java.util.List;
 @RegisterClientHeaders
 public interface MyRemoteService {
 
-    /*default String lookupAuth(String headerName) {
-        if ("SomeHeader".equals(headerName)) {
-            return "InvokedCount ";
-        }
-        throw new UnsupportedOperationException("unknown header name");
-    }*/
-
     @GET
-    @Path("/extensions")
+    @Path("/todos")
     String getExtensionsById(@QueryParam("id") String id);
 
     class Extension {
@@ -30,4 +23,5 @@ public interface MyRemoteService {
         public String shortName;
         public List<String> keywords;
     }
+
 }

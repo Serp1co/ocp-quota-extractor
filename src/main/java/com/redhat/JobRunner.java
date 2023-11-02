@@ -17,7 +17,7 @@ public class JobRunner {
     void schedule() {
         log.info("scheduled");
         RestClientBuilder builder = RestClientBuilder.newBuilder();
-        MyRemoteService service = builder.baseUri(URI.create("http://get-from-conf")).build(MyRemoteService.class);
+        MyRemoteService service = builder.baseUri(URI.create("https://api.crc.testing:6443")).build(MyRemoteService.class);
         log.info(service.getExtensionsById("myid"));
     }
 

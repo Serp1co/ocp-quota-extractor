@@ -1,5 +1,14 @@
 package com.redhat.models;
 
-public class Namespaces {
-    
+import io.quarkus.hibernate.orm.panache.PanacheEntity;
+import jakarta.persistence.Entity;
+import lombok.Getter;
+import lombok.Setter;
+
+@Entity
+@Getter
+@Setter
+public class Namespaces extends PanacheEntity {
+    String NamespaceName;
+    String Cluster;
 }
