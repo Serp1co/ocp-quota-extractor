@@ -1,14 +1,14 @@
 package com.redhat.models;
 
-import io.quarkus.hibernate.orm.panache.PanacheEntity;
-import jakarta.persistence.Entity;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
-@Entity
+//@Entity
 @Getter
 @Setter
-public class Namespaces extends PanacheEntity {
+@ToString
+public class Namespaces /* extends PanacheEntity */ {
     String NamespaceName;
     String Cluster;
 }
