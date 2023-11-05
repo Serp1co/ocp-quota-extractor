@@ -1,17 +1,17 @@
 package com.redhat.models;
 
-//import io.quarkus.hibernate.orm.panache.PanacheEntity;
-//import jakarta.persistence.Entity;
+import io.quarkus.hibernate.orm.panache.PanacheEntity;
+import jakarta.persistence.Entity;
 import lombok.*;
 
-//@Entity
+@Entity
 @Getter
 @Setter
 @ToString
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Nodes /* extends PanacheEntity */ {
+public class Nodes extends PanacheEntity {
     String cluster;
     String codeName;
     String CPU;
