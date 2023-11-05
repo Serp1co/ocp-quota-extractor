@@ -1,8 +1,7 @@
-package com.redhat.services;
+package com.redhat.quota.extractor.services;
 
-import com.redhat.exception.ApplicationException;
+import com.redhat.quota.extractor.exception.ApplicationException;
 import io.quarkus.rest.client.reactive.ClientRedirectHandler;
-import io.smallrye.common.annotation.Blocking;
 import io.smallrye.config.ConfigMapping;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -18,14 +17,14 @@ import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 import java.net.URI;
 import java.util.Optional;
 
-import static com.redhat.utils.ApiToEntity.getBasicAuthString;
+import static com.redhat.quota.extractor.utils.ApiToEntity.getBasicAuthString;
 
 @ApplicationScoped
 @Log
 public class LoginService {
 
     @Inject
-    LoginConfigs authConfigs;
+    LoginConfigs loginConfigs;
 
     OcpAuthClient buildLoginClient(String uri) {
         return RestClientBuilder.newBuilder()
@@ -45,13 +44,12 @@ public class LoginService {
         return token.orElseThrow(ApplicationException.AuthTokenNotReceivedException::new);
     }
 
-    @Blocking
     public String doLogin() throws ApplicationException {
-        OcpAuthClient ocpAuthClient = buildLoginClient(authConfigs.url());
+        OcpAuthClient ocpAuthClient = buildLoginClient(loginConfigs.url());
         String basicAuthString =
-                getBasicAuthString(authConfigs.credentials().username(), authConfigs.credentials().password());
+                getBasicAuthString(loginConfigs.credentials().username(), loginConfigs.credentials().password());
         try (Response redirectionResponse =
-                     ocpAuthClient.login(authConfigs.clientId(), authConfigs.responseType(), basicAuthString)) {
+                     ocpAuthClient.login(loginConfigs.clientId(), loginConfigs.responseType(), basicAuthString)) {
             return getToken(redirectionResponse.getLocation().toString());
         } catch (Exception e) {
             throw new ApplicationException("Generic Error", e);

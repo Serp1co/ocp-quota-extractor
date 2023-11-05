@@ -1,6 +1,6 @@
-package com.redhat.utils;
+package com.redhat.quota.extractor.utils;
 
-import com.redhat.models.Namespaces;
+import com.redhat.quota.extractor.models.Namespaces;
 
 import java.util.Base64;
 

@@ -1,10 +1,10 @@
-package com.redhat;
+package com.redhat.quota.extractor;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.redhat.exception.ApplicationException;
-import com.redhat.models.Namespaces;
-import com.redhat.services.LoginService;
-import com.redhat.utils.ApiToEntity;
+import com.redhat.quota.extractor.exception.ApplicationException;
+import com.redhat.quota.extractor.models.Namespaces;
+import com.redhat.quota.extractor.services.LoginService;
+import com.redhat.quota.extractor.utils.ApiToEntity;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
@@ -12,7 +12,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.quarkus.scheduler.Scheduled;
-import io.smallrye.common.annotation.Blocking;
 import io.smallrye.config.ConfigMapping;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -61,7 +60,6 @@ public class JobRunner {
         doJob();
     }
 
-    @Blocking
     public void doJob() throws ApplicationException, JsonProcessingException {
         Optional<List<?>> out = Optional.empty();
         String token = loginService.doLogin();
@@ -93,8 +91,7 @@ public class JobRunner {
         Map<String, Quantity> capacity;
         Map<String, Quantity> allocatable;
 
-        NodeCapacityAndAllocatable() {
-        }
+        NodeCapacityAndAllocatable() {}
 
         public static NodeCapacityAndAllocatable fromK8sNodeStatus(NodeStatus node) {
             NodeCapacityAndAllocatable out = new NodeCapacityAndAllocatable();

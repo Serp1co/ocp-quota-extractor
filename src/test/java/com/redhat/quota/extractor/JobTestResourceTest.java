@@ -1,4 +1,4 @@
-package com.redhat;
+package com.redhat.quota.extractor;
 
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
