@@ -1,14 +1,15 @@
 package com.redhat.models;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 
 //@Entity
 @Getter
 @Setter
 @ToString
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Namespaces /* extends PanacheEntity */ {
-    String NamespaceName;
-    String Cluster;
+    String namespaceName;
+    String cluster;
 }

@@ -1,5 +1,7 @@
 package com.redhat;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.redhat.exception.ApplicationException;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -14,8 +16,8 @@ public class JobTestResource {
 
 
     @POST
-    public void doJob() {
-        jobRunner.schedule();
+    public void doJob() throws ApplicationException, JsonProcessingException {
+        jobRunner.doJob();
     }
 
 }

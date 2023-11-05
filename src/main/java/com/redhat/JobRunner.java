@@ -1,10 +1,11 @@
 package com.redhat;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.redhat.exception.ApplicationException;
 import com.redhat.models.Namespaces;
-import com.redhat.remote.LoginService;
+import com.redhat.services.LoginService;
 import com.redhat.utils.ApiToEntity;
-import io.fabric8.kubernetes.api.model.Namespace;
-import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -12,78 +13,36 @@ import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.quarkus.scheduler.Scheduled;
 import io.smallrye.common.annotation.Blocking;
+import io.smallrye.config.ConfigMapping;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.core.Response;
+import lombok.Getter;
 import lombok.extern.java.Log;
-import org.eclipse.microprofile.rest.client.inject.RestClient;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 
 @ApplicationScoped
 @Log
 public class JobRunner {
 
-    String[] clusters = {"https://api.crc.testing:6443"};
-
     @Inject
-    @RestClient
+    ExtractorConfigs extractorConfigs;
+    @Inject
     LoginService loginService;
 
-    @Transactional
-    @Scheduled(cron = "${job.schedule.time: 0 0 10 * * ?}")
-    void schedule() {
-        doJob();
-    }
-
-    @Blocking
-    public void doJob() {
-        String token = doLogin().orElseThrow();
-        for (String cluster: clusters) {
-            Config config = buildOcpClientConfig(cluster, token);
-            try (KubernetesClient generic_kube_client = new KubernetesClientBuilder().withConfig(config).build()) {
-                try(OpenShiftClient ocp_client = generic_kube_client.adapt(OpenShiftClient.class)) {
-                    List<Namespaces> namespacesList = getNamespacesFromApi(ocp_client, cluster);
-                }
-            }
-        }
-    }
-
-
-    @Blocking
-    Optional<String> doLogin() throws ApplicationException {
-        Optional<String> token = Optional.empty();
-        try (Response ignored = loginService.login("openshift-challenging-client", "token")) {
-            String tokenString = LoginService.redirectLocation.get();
-            for (String s : tokenString.split("&")) {
-                if (s.contains("access_token")) token = Optional.of(s.split("access_token=")[1]);
-            }
-        } catch (Exception e) {
-            throw new ApplicationException(e);
-        }
-        return token;
-    }
-
-    Config buildOcpClientConfig(final String cluster, final String oauthToken) {
-        return new ConfigBuilder().withMasterUrl(cluster)
+    public static Config buildOcpClientConfig(final String cluster, final String oauthToken) {
+        return new ConfigBuilder()
+                .withMasterUrl(cluster)
                 .withDisableHostnameVerification(true)
+                .withTrustCerts(true)
                 .withOauthToken(oauthToken)
                 .build();
     }
 
-    OpenShiftClient buildOcpClient(Config config) {
-        try (KubernetesClient generic_kube_client = new KubernetesClientBuilder().withConfig(config).build()) {
-            return generic_kube_client.adapt(OpenShiftClient.class);
-        }
-    }
-
-    List<Namespaces> getNamespacesFromApi(OpenShiftClient ocp_client, String cluster) {
+    public static List<Namespaces> getNamespacesFromApi(OpenShiftClient ocp_client, String cluster) {
         return ocp_client.namespaces()
                 .list()
                 .getItems()
@@ -96,4 +55,55 @@ public class JobRunner {
                 ;
     }
 
+    @Transactional
+    @Scheduled(cron = "${job.schedule.time: 0 0 10 * * ?}")
+    void schedule() throws ApplicationException, JsonProcessingException {
+        doJob();
+    }
+
+    @Blocking
+    public void doJob() throws ApplicationException, JsonProcessingException {
+        Optional<List<?>> out = Optional.empty();
+        String token = loginService.doLogin();
+        for (String cluster : extractorConfigs.clustersUrl()) {
+            log.info(cluster);
+            Config config = buildOcpClientConfig(cluster, token);
+            try (KubernetesClient generic_kube_client = new KubernetesClientBuilder().withConfig(config).build()) {
+                try (OpenShiftClient ocp_client = generic_kube_client.adapt(OpenShiftClient.class)) {
+                    List<Namespaces> namespacesList = getNamespacesFromApi(ocp_client, cluster);
+                    List<Node> nodeList = ocp_client.nodes().list().getItems();
+                    List<NodeCapacityAndAllocatable> nodeCapacityAndAllocatableList = nodeList.stream()
+                            .map(Node::getStatus)
+                            .map(NodeCapacityAndAllocatable::fromK8sNodeStatus)
+                            .toList();
+                }
+            }
+        }
+    }
+
+    @ConfigMapping(prefix = "extractor")
+    interface ExtractorConfigs {
+
+        List<String> clustersUrl();
+
+    }
+
+    @Getter
+    public static class NodeCapacityAndAllocatable {
+        Map<String, Quantity> capacity;
+        Map<String, Quantity> allocatable;
+
+        NodeCapacityAndAllocatable() {
+        }
+
+        public static NodeCapacityAndAllocatable fromK8sNodeStatus(NodeStatus node) {
+            NodeCapacityAndAllocatable out = new NodeCapacityAndAllocatable();
+            out.capacity = node.getCapacity();
+            out.allocatable = node.getAllocatable();
+            return out;
+        }
+
+    }
+
 }
+
