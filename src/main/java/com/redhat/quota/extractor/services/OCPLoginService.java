@@ -76,6 +76,8 @@ public class OCPLoginService {
 
         String responseType();
 
+        boolean useSaAuth();
+
         BasicAuthConfigs credentials();
 
         interface BasicAuthConfigs {
