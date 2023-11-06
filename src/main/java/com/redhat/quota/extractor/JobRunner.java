@@ -3,7 +3,6 @@ package com.redhat.quota.extractor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.redhat.quota.extractor.exception.ApplicationException;
 import com.redhat.quota.extractor.models.Namespaces;
-import com.redhat.quota.extractor.services.LoginService;
 import com.redhat.quota.extractor.utils.ApiToEntity;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.Config;
@@ -30,7 +29,7 @@ public class JobRunner {
     @Inject
     ExtractorConfigs extractorConfigs;
     @Inject
-    LoginService loginService;
+    com.redhat.quota.extractor.services.OCPLoginService OCPLoginService;
 
     public static Config buildOcpClientConfig(final String cluster, final String oauthToken) {
         return new ConfigBuilder()
@@ -62,7 +61,7 @@ public class JobRunner {
 
     public void doJob() throws ApplicationException, JsonProcessingException {
         Optional<List<?>> out = Optional.empty();
-        String token = loginService.doLogin();
+        String token = OCPLoginService.login();
         for (String cluster : extractorConfigs.clustersUrl()) {
             log.info(cluster);
             Config config = buildOcpClientConfig(cluster, token);

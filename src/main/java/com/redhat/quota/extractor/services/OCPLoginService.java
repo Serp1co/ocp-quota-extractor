@@ -1,6 +1,8 @@
 package com.redhat.quota.extractor.services;
 
-import com.redhat.quota.extractor.exception.ApplicationException;
+import com.redhat.quota.extractor.exception.ApplicationException.AuthTokenNotReceivedException;
+import com.redhat.quota.extractor.exception.ApplicationException.AuthTokenParseException;
+import com.redhat.quota.extractor.exception.ApplicationException.LoginException;
 import io.quarkus.rest.client.reactive.ClientRedirectHandler;
 import io.smallrye.config.ConfigMapping;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -12,19 +14,29 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Response;
 import lombok.extern.java.Log;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
-import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 
 import java.net.URI;
 import java.util.Optional;
 
 import static com.redhat.quota.extractor.utils.ApiToEntity.getBasicAuthString;
 
+
 @ApplicationScoped
 @Log
-public class LoginService {
+public class OCPLoginService {
 
     @Inject
     LoginConfigs loginConfigs;
+
+    public String login() throws LoginException {
+        return doLogin(
+                loginConfigs.url(),
+                loginConfigs.clientId(),
+                loginConfigs.responseType(),
+                loginConfigs.credentials().username(),
+                loginConfigs.credentials().password()
+        );
+    }
 
     OcpAuthClient buildLoginClient(String uri) {
         return RestClientBuilder.newBuilder()
@@ -32,30 +44,29 @@ public class LoginService {
                 .build(OcpAuthClient.class);
     }
 
-    String getToken(String tokenString) throws ApplicationException {
+    String getToken(String tokenString) throws LoginException {
         Optional<String> token = Optional.empty();
         try {
             for (String s : tokenString.split("&")) {
                 if (s.contains("access_token")) token = Optional.of(s.split("access_token=")[1]);
             }
         } catch (Exception e) {
-            throw new ApplicationException.AuthTokenParseException(tokenString, e);
+            throw new AuthTokenParseException(tokenString, e);
         }
-        return token.orElseThrow(ApplicationException.AuthTokenNotReceivedException::new);
+        return token.orElseThrow(AuthTokenNotReceivedException::new);
     }
 
-    public String doLogin() throws ApplicationException {
-        OcpAuthClient ocpAuthClient = buildLoginClient(loginConfigs.url());
+    String doLogin(String url, String clientId, String responseType, String username, String password) throws LoginException {
+        OcpAuthClient ocpAuthClient = buildLoginClient(url);
         String basicAuthString =
-                getBasicAuthString(loginConfigs.credentials().username(), loginConfigs.credentials().password());
+                getBasicAuthString(username, password);
         try (Response redirectionResponse =
-                     ocpAuthClient.login(loginConfigs.clientId(), loginConfigs.responseType(), basicAuthString)) {
+                     ocpAuthClient.login(clientId, responseType, basicAuthString)) {
             return getToken(redirectionResponse.getLocation().toString());
         } catch (Exception e) {
-            throw new ApplicationException("Generic Error", e);
+            throw new LoginException("Generic Error", e);
         }
     }
-
 
     @ConfigMapping(prefix = "extractor.login")
     interface LoginConfigs {
@@ -75,8 +86,10 @@ public class LoginService {
 
     }
 
+    /**
+     * Login rest client interface, to use programmatically
+     */
     @Path("/oauth")
-    @RegisterRestClient(configKey = "ocp-auth")
     interface OcpAuthClient {
 
         @ClientRedirectHandler
