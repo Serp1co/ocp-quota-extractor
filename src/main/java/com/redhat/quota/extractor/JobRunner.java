@@ -17,6 +17,8 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import lombok.Getter;
 import lombok.extern.java.Log;
+import com.redhat.quota.extractor.services.OCPLoginService;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.util.List;
 import java.util.Map;
@@ -29,15 +31,17 @@ public class JobRunner {
     @Inject
     ExtractorConfigs extractorConfigs;
     @Inject
-    com.redhat.quota.extractor.services.OCPLoginService OCPLoginService;
+    OCPLoginService OCPLoginService;
 
-    public static Config buildOcpClientConfig(final String cluster, final String oauthToken) {
-        return new ConfigBuilder()
-                .withMasterUrl(cluster)
-                .withDisableHostnameVerification(true)
-                .withTrustCerts(true)
-                .withOauthToken(oauthToken)
-                .build();
+    @ConfigProperty(name = "extractor.login.use-sa-auth", defaultValue = "true")
+    boolean useSaAuth;
+
+    static void builderAddOcpClientBasicAuthConfig(ConfigBuilder cf, final String cluster, final String oauthToken) {
+        cf.withDisableHostnameVerification(true).withTrustCerts(true).withOauthToken(oauthToken);
+    }
+
+    static void builderAddOcpClientSaAuthConfig(ConfigBuilder cf, final String cluster) {
+        cf.withDisableHostnameVerification(true).withTrustCerts(true);
     }
 
     public static List<Namespaces> getNamespacesFromApi(OpenShiftClient ocp_client, String cluster) {
@@ -61,11 +65,16 @@ public class JobRunner {
 
     public void doJob() throws ApplicationException, JsonProcessingException {
         Optional<List<?>> out = Optional.empty();
-        String token = OCPLoginService.login();
         for (String cluster : extractorConfigs.clustersUrl()) {
-            log.info(cluster);
-            Config config = buildOcpClientConfig(cluster, token);
-            try (KubernetesClient generic_kube_client = new KubernetesClientBuilder().withConfig(config).build()) {
+            ConfigBuilder ocpConfigBuilder = new ConfigBuilder().withMasterUrl(cluster);
+            if(useSaAuth) {
+                builderAddOcpClientSaAuthConfig(ocpConfigBuilder, cluster);
+            }
+            else {
+                String token = OCPLoginService.login();
+                builderAddOcpClientBasicAuthConfig(ocpConfigBuilder, cluster, token);
+            }
+            try (KubernetesClient generic_kube_client = new KubernetesClientBuilder().withConfig(ocpConfigBuilder.build()).build()) {
                 try (OpenShiftClient ocp_client = generic_kube_client.adapt(OpenShiftClient.class)) {
                     List<Namespaces> namespacesList = getNamespacesFromApi(ocp_client, cluster);
                     List<Node> nodeList = ocp_client.nodes().list().getItems();
