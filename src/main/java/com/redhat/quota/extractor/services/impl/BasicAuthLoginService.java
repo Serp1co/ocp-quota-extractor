@@ -1,8 +1,7 @@
-package com.redhat.quota.extractor.services;
+package com.redhat.quota.extractor.services.impl;
 
-import com.redhat.quota.extractor.exception.ApplicationException.AuthTokenNotReceivedException;
-import com.redhat.quota.extractor.exception.ApplicationException.AuthTokenParseException;
-import com.redhat.quota.extractor.exception.ApplicationException.LoginException;
+import com.redhat.quota.extractor.exception.LoginException;
+import com.redhat.quota.extractor.services.interfaces.ILoginService;
 import io.quarkus.rest.client.reactive.ClientRedirectHandler;
 import io.smallrye.config.ConfigMapping;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -23,18 +22,29 @@ import static com.redhat.quota.extractor.utils.ApiToEntity.getBasicAuthString;
 
 @ApplicationScoped
 @Log
-public class OCPLoginService {
+public class BasicAuthLoginService implements ILoginService {
 
     @Inject
     LoginConfigs loginConfigs;
 
-    public String login() throws LoginException {
-        return doLogin(
-                loginConfigs.url(),
-                loginConfigs.clientId(),
-                loginConfigs.responseType(),
-                loginConfigs.credentials().username(),
-                loginConfigs.credentials().password()
+    /**
+     * logs in with basic auth and returns the oauth token to propagate
+     *
+     * @return the auth token
+     * @throws LoginException.LoginConfigurationException
+     */
+    public Optional<String> login() throws LoginException {
+        if (loginConfigs.useSaAuth()) return Optional.empty();
+        LoginConfigs.BasicAuthClientConfigs basicAuthClientConfigs =
+                loginConfigs.basicAuth().orElseThrow(() -> new LoginException
+                        .LoginConfigurationException("BasicAuth Login activated but not configured properly"));
+        return Optional.of(
+                doLogin(
+                        basicAuthClientConfigs.url(),
+                        basicAuthClientConfigs.clientId(),
+                        basicAuthClientConfigs.responseType(),
+                        basicAuthClientConfigs.credentials().username(),
+                        basicAuthClientConfigs.credentials().password())
         );
     }
 
@@ -51,9 +61,9 @@ public class OCPLoginService {
                 if (s.contains("access_token")) token = Optional.of(s.split("access_token=")[1]);
             }
         } catch (Exception e) {
-            throw new AuthTokenParseException(tokenString, e);
+            throw new LoginException.AuthTokenParseException(tokenString, e);
         }
-        return token.orElseThrow(AuthTokenNotReceivedException::new);
+        return token.orElseThrow(LoginException.AuthTokenNotReceivedException::new);
     }
 
     String doLogin(String url, String clientId, String responseType, String username, String password) throws LoginException {
@@ -62,6 +72,7 @@ public class OCPLoginService {
                 getBasicAuthString(username, password);
         try (Response redirectionResponse =
                      ocpAuthClient.login(clientId, responseType, basicAuthString)) {
+            //get token from uri redirect
             return getToken(redirectionResponse.getLocation().toString());
         } catch (Exception e) {
             throw new LoginException("Generic Error", e);
@@ -70,20 +81,24 @@ public class OCPLoginService {
 
     @ConfigMapping(prefix = "extractor.login")
     interface LoginConfigs {
-        String url();
-
-        String clientId();
-
-        String responseType();
-
         boolean useSaAuth();
 
-        BasicAuthConfigs credentials();
+        Optional<BasicAuthClientConfigs> basicAuth();
 
-        interface BasicAuthConfigs {
-            String password();
+        interface BasicAuthClientConfigs {
+            String url();
 
-            String username();
+            String clientId();
+
+            String responseType();
+
+            BasicAuthCredentialsConfigs credentials();
+
+            interface BasicAuthCredentialsConfigs {
+                String password();
+
+                String username();
+            }
         }
 
     }

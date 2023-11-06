@@ -6,10 +6,9 @@ import java.util.Base64;
 
 public class ApiToEntity {
 
-    public static Namespaces NAMESPACES(String ns_name, String cluster_name) {
+    public static Namespaces NAMESPACES(String ns_name) {
         return Namespaces.builder()
                 .namespaceName(ns_name)
-                .cluster(cluster_name)
                 .build();
     }
 
