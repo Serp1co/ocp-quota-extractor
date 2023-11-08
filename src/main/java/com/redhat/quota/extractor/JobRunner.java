@@ -15,16 +15,16 @@ public class JobRunner {
     OcpCollectorService ocpCollectorService;
 
     @Transactional
-    @Scheduled(cron = "${extractor.job.schedule.time: 0 0 10 * * ?}")
+    @Scheduled(cron = "${extractor.job.schedule.time: 0 0 23 * * ?}")
     void schedule() {
         doJob();
     }
 
     public void doJob() {
+        log.info("job start");
         ocpCollectorService.doFullCollection();
+        log.info("job end");
     }
-
-
 
 }
 

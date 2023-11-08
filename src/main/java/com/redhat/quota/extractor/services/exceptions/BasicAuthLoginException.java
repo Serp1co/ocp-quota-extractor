@@ -1,4 +1,4 @@
-package com.redhat.quota.extractor.services.login.exceptions;
+package com.redhat.quota.extractor.services.exceptions;
 
 import lombok.Getter;
 

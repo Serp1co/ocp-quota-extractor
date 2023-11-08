@@ -1,5 +1,6 @@
-package com.redhat.quota.extractor.services.login.providers;
+package com.redhat.quota.extractor.services.providers;
 
+import com.redhat.quota.extractor.services.providers.login.IOcpAuthConfig;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -23,9 +24,9 @@ public class OpenshiftClientProvider {
 
     @Produces
     @RequestScoped
-    public Set<OpenShiftClient> ocpClients(Instance<Config> ocpConfig) {
+    public Set<OpenShiftClient> ocpClients(Instance<IOcpAuthConfig> ocpConfig) {
         return clusters.stream().map(currentCluster -> {
-            Config finalConfig = new ConfigBuilder(ocpConfig.get())
+            Config finalConfig = new ConfigBuilder(ocpConfig.get().getConfig())
                     .withMasterUrl(currentCluster)
                     .build();
             //we ignore auto-closable
@@ -35,8 +36,6 @@ public class OpenshiftClientProvider {
             return openShiftClient.adapt(OpenShiftClient.class);
         }).collect(Collectors.toSet());
     }
-
-
 
 }
 

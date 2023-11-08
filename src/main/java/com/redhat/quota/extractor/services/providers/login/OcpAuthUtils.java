@@ -1,8 +1,8 @@
-package com.redhat.quota.extractor.services.login.providers.login;
+package com.redhat.quota.extractor.services.providers.login;
 
 import io.fabric8.kubernetes.client.ConfigBuilder;
 
-public class LoginProviderUtils {
+public class OcpAuthUtils {
 
     static ConfigBuilder builderForSaProd() {
         return new ConfigBuilder();

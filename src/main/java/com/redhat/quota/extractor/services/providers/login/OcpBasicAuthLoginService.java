@@ -1,7 +1,7 @@
-package com.redhat.quota.extractor.services.login.providers.login;
+package com.redhat.quota.extractor.services.providers.login;
 
-import com.redhat.quota.extractor.services.login.exceptions.BasicAuthLoginException;
-import com.redhat.quota.extractor.services.login.exceptions.LoginException;
+import com.redhat.quota.extractor.services.exceptions.LoginException;
+import com.redhat.quota.extractor.services.exceptions.BasicAuthLoginException;
 import io.quarkus.rest.client.reactive.ClientRedirectHandler;
 import io.smallrye.config.ConfigMapping;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -18,9 +18,9 @@ import java.net.URI;
 import java.util.Base64;
 import java.util.Optional;
 
-import com.redhat.quota.extractor.services.login.exceptions.BasicAuthLoginException.BasicAuthLoginConfigurationException;
-import com.redhat.quota.extractor.services.login.exceptions.BasicAuthLoginException.AuthTokenParseException;
-import com.redhat.quota.extractor.services.login.exceptions.BasicAuthLoginException.AuthTokenNotReceivedException;
+import com.redhat.quota.extractor.services.exceptions.BasicAuthLoginException.BasicAuthLoginConfigurationException;
+import com.redhat.quota.extractor.services.exceptions.BasicAuthLoginException.AuthTokenParseException;
+import com.redhat.quota.extractor.services.exceptions.BasicAuthLoginException.AuthTokenNotReceivedException;
 
 @ApplicationScoped
 @Log
