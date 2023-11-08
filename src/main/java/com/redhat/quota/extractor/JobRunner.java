@@ -1,6 +1,6 @@
 package com.redhat.quota.extractor;
 
-import com.redhat.quota.extractor.services.impl.QuotaCollectorService;
+import com.redhat.quota.extractor.services.collector.OcpCollectorService;
 import io.quarkus.scheduler.Scheduled;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -12,18 +12,18 @@ import lombok.extern.java.Log;
 public class JobRunner {
 
     @Inject
-    QuotaCollectorService quotaCollectorService;
+    OcpCollectorService ocpCollectorService;
 
     @Transactional
-    @Scheduled(cron = "${job.schedule.time: 0 0 10 * * ?}")
+    @Scheduled(cron = "${extractor.job.schedule.time: 0 0 10 * * ?}")
     void schedule() {
         doJob();
     }
 
     public void doJob() {
-        quotaCollectorService.collectNamespaces().forEach(s -> log.info(s.toString()));
-        quotaCollectorService.collectNodes().forEach(s -> log.info(s.toString()));
+        ocpCollectorService.doFullCollection();
     }
+
 
 
 }

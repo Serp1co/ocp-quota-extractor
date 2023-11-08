@@ -1,7 +1,5 @@
-package com.redhat.quota.extractor.services.impl;
+package com.redhat.quota.extractor.services.login;
 
-import com.redhat.quota.extractor.exception.LoginException;
-import com.redhat.quota.extractor.services.interfaces.ILoginService;
 import io.quarkus.rest.client.reactive.ClientRedirectHandler;
 import io.smallrye.config.ConfigMapping;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -15,14 +13,16 @@ import lombok.extern.java.Log;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
 
 import java.net.URI;
+import java.util.Base64;
 import java.util.Optional;
 
-import static com.redhat.quota.extractor.utils.ApiToEntity.getBasicAuthString;
-
+import com.redhat.quota.extractor.services.login.BasicAuthLoginException.BasicAuthLoginConfigurationException;
+import com.redhat.quota.extractor.services.login.BasicAuthLoginException.AuthTokenParseExceptionBasicAuth;
+import com.redhat.quota.extractor.services.login.BasicAuthLoginException.AuthTokenNotReceivedExceptionBasicAuth;
 
 @ApplicationScoped
 @Log
-public class BasicAuthLoginService implements ILoginService {
+public class BasicAuthLoginService {
 
     @Inject
     LoginConfigs loginConfigs;
@@ -31,15 +31,14 @@ public class BasicAuthLoginService implements ILoginService {
      * logs in with basic auth and returns the oauth token to propagate
      *
      * @return the auth token
-     * @throws LoginException.LoginConfigurationException
+     * @throws BasicAuthLoginException
      */
-    public Optional<String> login() throws LoginException {
+    public Optional<String> login() throws BasicAuthLoginException {
         if (loginConfigs.useSaAuth()) return Optional.empty();
         LoginConfigs.BasicAuthClientConfigs basicAuthClientConfigs =
-                loginConfigs.basicAuth().orElseThrow(() -> new LoginException
-                        .LoginConfigurationException("BasicAuth Login activated but not configured properly"));
+                loginConfigs.basicAuth().orElseThrow(BasicAuthLoginConfigurationException::new);
         return Optional.of(
-                doLogin(
+                doLoginAndReturnToken(
                         basicAuthClientConfigs.url(),
                         basicAuthClientConfigs.clientId(),
                         basicAuthClientConfigs.responseType(),
@@ -48,38 +47,45 @@ public class BasicAuthLoginService implements ILoginService {
         );
     }
 
-    OcpAuthClient buildLoginClient(String uri) {
+    static OcpAuthClient buildLoginClient(String uri) {
         return RestClientBuilder.newBuilder()
                 .baseUri(URI.create(uri))
                 .build(OcpAuthClient.class);
     }
 
-    String getToken(String tokenString) throws LoginException {
-        Optional<String> token = Optional.empty();
-        try {
-            for (String s : tokenString.split("&")) {
-                if (s.contains("access_token")) token = Optional.of(s.split("access_token=")[1]);
-            }
-        } catch (Exception e) {
-            throw new LoginException.AuthTokenParseException(tokenString, e);
-        }
-        return token.orElseThrow(LoginException.AuthTokenNotReceivedException::new);
+    static String getBasicAuthString(String username, String password) {
+        return "Basic " + Base64.getEncoder()
+                .encodeToString((username + ":" + password).getBytes());
     }
 
-    String doLogin(String url, String clientId, String responseType, String username, String password) throws LoginException {
+    static String doLoginAndReturnToken(String url, String clientId,
+                                        String responseType, String username,
+                                        String password) throws BasicAuthLoginException {
         OcpAuthClient ocpAuthClient = buildLoginClient(url);
         String basicAuthString =
                 getBasicAuthString(username, password);
         try (Response redirectionResponse =
                      ocpAuthClient.login(clientId, responseType, basicAuthString)) {
             //get token from uri redirect
-            return getToken(redirectionResponse.getLocation().toString());
+            return getTokenFromRedirect(redirectionResponse.getLocation().toString());
         } catch (Exception e) {
-            throw new LoginException("Generic Error", e);
+            throw new BasicAuthLoginException("Generic Error", e);
         }
     }
 
-    @ConfigMapping(prefix = "extractor.login")
+    static String getTokenFromRedirect(String tokenString) throws BasicAuthLoginException {
+        Optional<String> token = Optional.empty();
+        try {
+            for (String s : tokenString.split("&")) {
+                if (s.contains("access_token")) token = Optional.of(s.split("access_token=")[1]);
+            }
+        } catch (Exception e) {
+            throw new AuthTokenParseExceptionBasicAuth(e);
+        }
+        return token.orElseThrow(AuthTokenNotReceivedExceptionBasicAuth::new);
+    }
+
+    @ConfigMapping(prefix = "extractor.client.login")
     interface LoginConfigs {
         boolean useSaAuth();
 

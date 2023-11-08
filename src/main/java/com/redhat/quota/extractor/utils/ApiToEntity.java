@@ -1,20 +1,15 @@
 package com.redhat.quota.extractor.utils;
 
-import com.redhat.quota.extractor.models.Namespaces;
-
-import java.util.Base64;
+import com.redhat.quota.extractor.persistance.models.Namespaces;
 
 public class ApiToEntity {
 
-    public static Namespaces NAMESPACES(String ns_name) {
+    public static Namespaces NAMESPACES(String nsName, String cluster) {
         return Namespaces.builder()
-                .namespaceName(ns_name)
+                .namespaceName(nsName)
+                .cluster(cluster)
                 .build();
     }
 
-    public static String getBasicAuthString(String username, String password) {
-        return "Basic " + Base64.getEncoder()
-                .encodeToString((username + ":" + password).getBytes());
-    }
 
 }
