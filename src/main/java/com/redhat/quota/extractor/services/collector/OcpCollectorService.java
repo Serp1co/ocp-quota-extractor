@@ -6,24 +6,26 @@ import com.redhat.quota.extractor.utils.ApiToEntity;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.openshift.client.OpenShiftClient;
 import jakarta.enterprise.context.RequestScoped;
+import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import lombok.Getter;
 import lombok.extern.java.Log;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @RequestScoped
 @Log
 public class OcpCollectorService {
 
     @Inject
-    Map<String, OpenShiftClient> ocpClusterClientMap;
+    Set<OpenShiftClient> ocpClusterClientMap;
 
     public void doFullCollection() {
-        ocpClusterClientMap.forEach((cluster, client) ->
-                collectNamespaces(cluster, client).forEach(
-                        ns -> log.info(ns.toString())
+        ocpClusterClientMap.forEach(client ->
+                collectNamespaces(client.getMasterUrl().toString(), client)
+                        .forEach(ns -> log.info(ns.toString())
                 ));
     }
 
