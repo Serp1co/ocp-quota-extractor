@@ -1,4 +1,4 @@
-package com.redhat.quota.extractor.persistance.models;
+package com.redhat.quota.extractor.persistance.entities;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntity;
 import jakarta.persistence.Entity;
@@ -11,7 +11,10 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Namespaces extends PanacheEntity {
-    String namespaceName;
+public class Nodes extends ExtractorEntity {
     String cluster;
+    String codeName;
+    String CPU;
+    String memory;
+    String disk;
 }

@@ -1,4 +1,4 @@
-package com.redhat.quota.extractor.persistance.models;
+package com.redhat.quota.extractor.persistance.entities;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntity;
 import jakarta.persistence.Entity;
@@ -8,8 +8,8 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
-public class Annotations extends PanacheEntity {
+public class Labels extends ExtractorEntity {
     String Namespace;
-    String AnnotationName;
-    String AnnotationValue;
+    String LabelName;
+    String LabelValue;
 }

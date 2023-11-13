@@ -1,4 +1,4 @@
-package com.redhat.quota.extractor.persistance.models;
+package com.redhat.quota.extractor.persistance.entities;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntity;
 import jakarta.persistence.Entity;
@@ -8,7 +8,7 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
-public class ClusterResourceQuotas extends PanacheEntity {
+public class ClusterResourceQuotas extends ExtractorEntity {
     String Cluster;
     String QuotaName;
     String RequestID;

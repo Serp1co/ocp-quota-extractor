@@ -1,7 +1,7 @@
-package com.redhat.quota.extractor.services.providers.login;
+package com.redhat.quota.extractor.services;
 
-import com.redhat.quota.extractor.services.exceptions.LoginException;
-import com.redhat.quota.extractor.services.exceptions.BasicAuthLoginException;
+import com.redhat.quota.extractor.exceptions.LoginException;
+import com.redhat.quota.extractor.exceptions.BasicAuthLoginException;
 import io.quarkus.rest.client.reactive.ClientRedirectHandler;
 import io.smallrye.config.ConfigMapping;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -18,9 +18,9 @@ import java.net.URI;
 import java.util.Base64;
 import java.util.Optional;
 
-import com.redhat.quota.extractor.services.exceptions.BasicAuthLoginException.BasicAuthLoginConfigurationException;
-import com.redhat.quota.extractor.services.exceptions.BasicAuthLoginException.AuthTokenParseException;
-import com.redhat.quota.extractor.services.exceptions.BasicAuthLoginException.AuthTokenNotReceivedException;
+import com.redhat.quota.extractor.exceptions.BasicAuthLoginException.BasicAuthLoginConfigurationException;
+import com.redhat.quota.extractor.exceptions.BasicAuthLoginException.AuthTokenParseException;
+import com.redhat.quota.extractor.exceptions.BasicAuthLoginException.AuthTokenNotReceivedException;
 
 @ApplicationScoped
 @Log
@@ -33,7 +33,7 @@ public class OcpBasicAuthLoginService {
      * logs in with basic auth and returns the oauth token to propagate
      *
      * @return the auth token
-     * @throws LoginException
+     * @throws LoginException failed login or failed oauth token
      */
     public String login() throws LoginException {
         LoginConfigs.BasicAuthClientConfigs basicAuthClientConfigs =
@@ -90,6 +90,11 @@ public class OcpBasicAuthLoginService {
     @Path("/oauth")
     interface OcpAuthClient {
 
+        /**
+         * always follow redirects (not only on GET requests)
+         * @param response the response
+         * @return the uri redirection
+         */
         @ClientRedirectHandler
         static URI alwaysRedirect(Response response) {
             if (Response.Status.Family.familyOf(response.getStatus()) == Response.Status.Family.REDIRECTION) {
@@ -98,6 +103,13 @@ public class OcpBasicAuthLoginService {
             return null;
         }
 
+        /**
+         * try to log in, returns the response with the token
+         * @param client_id the client id
+         * @param response_type the response type
+         * @param auth the authorization header
+         * @return the login response
+         */
         @Path("/authorize")
         @POST
         Response login(@QueryParam("client_id") String client_id,
@@ -126,6 +138,6 @@ public class OcpBasicAuthLoginService {
                 String username();
             }
         }
-
     }
+
 }
