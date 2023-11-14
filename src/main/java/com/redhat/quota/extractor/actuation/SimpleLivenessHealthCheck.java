@@ -1,11 +1,16 @@
-package com.redhat.quota.extractor;
+package com.redhat.quota.extractor.actuation;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.Liveness;
 
+/**
+ * at /health/live
+ */
 @Liveness
-public class MyLivenessCheck implements HealthCheck {
+@ApplicationScoped
+public class SimpleLivenessHealthCheck implements HealthCheck {
 
     @Override
     public HealthCheckResponse call() {

@@ -1,6 +1,6 @@
 package com.redhat.quota.extractor.persistance.entities;
 
-import io.quarkus.hibernate.orm.panache.PanacheEntity;
+import com.redhat.quota.extractor.persistance.entities.commons.ExtractorEntity;
 import jakarta.persistence.Entity;
 import lombok.Getter;
 import lombok.Setter;

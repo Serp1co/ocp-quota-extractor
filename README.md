@@ -1,6 +1,6 @@
 # ocp-quota-extractor
 
-This project uses Quarkus, the Supersonic Subatomic Java Framework.
+This project uses the RedHat build of Quarkus, the Supersonic Subatomic Java Framework.
 
 If you want to learn more about Quarkus, please visit its website: https://quarkus.io/ .
 
@@ -11,7 +11,7 @@ You can run your application in dev mode that enables live coding using:
 ./mvnw compile quarkus:dev
 ```
 
-> **_NOTE:_**  Quarkus now ships with a Dev UI, which is available in dev mode only at http://localhost:8080/q/dev/.
+> **_NOTE:_**  Quarkus Dev UI is available in dev mode only at http://localhost:8080/q/dev/.
 
 ## Packaging and running the application
 
@@ -33,9 +33,10 @@ The application, packaged as an _über-jar_, is now runnable using `java -jar ta
 
 ---
 
-## Running the application in Production
+## Running the application on Openshift using Source2Image (S2I)
 
-1) The application needs to be packaged (read paragraph "Packaging and running the application").
-2) Build the container image located in src/main/docker/Dockerfile.jvm
+1) Fork or clone this repository into your repository
+2) Create a new app and select GIT source repository
 3) Deploy the image to the OCP Cluster
 4) Add the required secrets to the deployment: 
+5) 

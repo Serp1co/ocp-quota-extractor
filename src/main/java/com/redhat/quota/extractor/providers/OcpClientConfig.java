@@ -22,10 +22,17 @@ public class OcpClientConfig {
     }
 
     @Getter
-    @NoArgsConstructor
     public static class OcpClientConfigBuilder {
 
-        ConfigBuilder cf = new ConfigBuilder();
+        ConfigBuilder cf;
+
+        public OcpClientConfigBuilder() {
+            this.cf = new ConfigBuilder();
+        }
+
+        public OcpClientConfigBuilder(OcpClientConfig ocpClientConfig) {
+            this.cf = new ConfigBuilder(ocpClientConfig.getConfig());
+        }
 
         public OcpClientConfigBuilder applyNoSsl() {
             cf.withDisableHostnameVerification(true).withTrustCerts(true);
