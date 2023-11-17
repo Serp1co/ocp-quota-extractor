@@ -13,9 +13,9 @@ import lombok.*;
 @AllArgsConstructor
 public class OpenShiftClusters extends ExtractorEntity {
     String ClusterName;
-    String ApiUrl;
-    String Status;
-    String Environment;
-    String AppCode;
-    String Customer;
+    String ApiUrl; //??
+    String Status; //??
+    String Environment; //??
+    String AppCode; //??
+    String Customer; //??
 }

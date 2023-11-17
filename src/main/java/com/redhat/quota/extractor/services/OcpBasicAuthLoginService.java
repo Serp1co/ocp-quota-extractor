@@ -1,7 +1,10 @@
 package com.redhat.quota.extractor.services;
 
-import com.redhat.quota.extractor.exceptions.LoginException;
 import com.redhat.quota.extractor.exceptions.BasicAuthLoginException;
+import com.redhat.quota.extractor.exceptions.BasicAuthLoginException.AuthTokenNotReceivedException;
+import com.redhat.quota.extractor.exceptions.BasicAuthLoginException.AuthTokenParseException;
+import com.redhat.quota.extractor.exceptions.BasicAuthLoginException.BasicAuthLoginConfigurationException;
+import com.redhat.quota.extractor.exceptions.LoginException;
 import io.quarkus.rest.client.reactive.ClientRedirectHandler;
 import io.smallrye.config.ConfigMapping;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -11,7 +14,6 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Response;
-import lombok.extern.java.Log;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
 
@@ -19,33 +21,12 @@ import java.net.URI;
 import java.util.Base64;
 import java.util.Optional;
 
-import com.redhat.quota.extractor.exceptions.BasicAuthLoginException.BasicAuthLoginConfigurationException;
-import com.redhat.quota.extractor.exceptions.BasicAuthLoginException.AuthTokenParseException;
-import com.redhat.quota.extractor.exceptions.BasicAuthLoginException.AuthTokenNotReceivedException;
-
 @ApplicationScoped
 @Slf4j
 public class OcpBasicAuthLoginService {
 
     @Inject
     LoginConfigs loginConfigs;
-
-    /**
-     * logs in with basic auth and returns the oauth token to propagate
-     *
-     * @return the auth token
-     * @throws LoginException failed login or failed oauth token
-     */
-    public String login() throws LoginException {
-        LoginConfigs.BasicAuthClientConfigs basicAuthClientConfigs =
-                loginConfigs.basicAuth().orElseThrow(BasicAuthLoginConfigurationException::new);
-        return doLoginAndReturnToken(
-                        basicAuthClientConfigs.url(),
-                        basicAuthClientConfigs.clientId(),
-                        basicAuthClientConfigs.responseType(),
-                        basicAuthClientConfigs.credentials().username(),
-                        basicAuthClientConfigs.credentials().password());
-    }
 
     static OcpAuthClient buildLoginClient(String uri) {
         return RestClientBuilder.newBuilder()
@@ -86,6 +67,23 @@ public class OcpBasicAuthLoginService {
     }
 
     /**
+     * logs in with basic auth and returns the oauth token to propagate
+     *
+     * @return the auth token
+     * @throws LoginException failed login or failed oauth token
+     */
+    public String login() throws LoginException {
+        LoginConfigs.BasicAuthClientConfigs basicAuthClientConfigs =
+                loginConfigs.basicAuth().orElseThrow(BasicAuthLoginConfigurationException::new);
+        return doLoginAndReturnToken(
+                basicAuthClientConfigs.url(),
+                basicAuthClientConfigs.clientId(),
+                basicAuthClientConfigs.responseType(),
+                basicAuthClientConfigs.credentials().username(),
+                basicAuthClientConfigs.credentials().password());
+    }
+
+    /**
      * Login rest client interface, to use programmatically
      */
     @Path("/oauth")
@@ -93,6 +91,7 @@ public class OcpBasicAuthLoginService {
 
         /**
          * always follow redirects (not only on GET requests)
+         *
          * @param response the response
          * @return the uri redirection
          */
@@ -106,9 +105,10 @@ public class OcpBasicAuthLoginService {
 
         /**
          * try to log in, returns the response with the token
-         * @param client_id the client id
+         *
+         * @param client_id     the client id
          * @param response_type the response type
-         * @param auth the authorization header
+         * @param auth          the authorization header
          * @return the login response
          */
         @Path("/authorize")

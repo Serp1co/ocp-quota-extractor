@@ -21,7 +21,7 @@ public class ClusterResourceQuotas extends ExtractorEntity {
     String UsedLimitMemory;
     String UsedRequestCPU;
     String UsedRequestMemory;
-    String Ambito;
-    String Application;
-    String ServiceModel;
+    String Ambito; //??
+    String Application; //??
+    String ServiceModel; //??
 }

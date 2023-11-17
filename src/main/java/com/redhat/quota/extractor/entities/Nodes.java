@@ -13,7 +13,7 @@ import lombok.*;
 @AllArgsConstructor
 public class Nodes extends ExtractorEntity {
     String cluster;
-    String codeName;
+    String codeName; //??
     String CPU;
     String memory;
     String disk;

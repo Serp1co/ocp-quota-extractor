@@ -3,7 +3,6 @@ package com.redhat.quota.extractor.providers;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 
 /**
  * Container class for injecting io.fabric8.kubernetes.client.Config

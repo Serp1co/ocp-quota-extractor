@@ -1,9 +1,10 @@
 package com.redhat.quota.extractor.services;
 
-import com.redhat.quota.extractor.collectors.*;
+import com.redhat.quota.extractor.collectors.ClusterResourceQuotasCollector;
+import com.redhat.quota.extractor.collectors.NamespacesCollector;
+import com.redhat.quota.extractor.collectors.NodesCollector;
+import com.redhat.quota.extractor.collectors.QuotaNamespacesCollector;
 import com.redhat.quota.extractor.entities.Namespaces;
-import com.redhat.quota.extractor.entities.Nodes;
-import com.redhat.quota.extractor.entities.QuotaNamespaces;
 import com.redhat.quota.extractor.entities.commons.ExtractorEntity;
 import com.redhat.quota.extractor.providers.OcpClientConfig;
 import io.fabric8.kubernetes.client.ConfigBuilder;
@@ -11,26 +12,19 @@ import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.smallrye.common.annotation.Blocking;
 import jakarta.enterprise.context.RequestScoped;
+import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
-import jakarta.inject.Named;
-import lombok.extern.java.Log;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
-import java.util.Collection;
-import java.util.List;
 import java.util.Set;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @RequestScoped
 @Slf4j
 public class OcpExtractorService {
 
     @Inject
-    OcpClientConfig ocpClientConfig;
+    Instance<OcpClientConfig> ocpClientConfig;
 
     @Inject
     NamespacesCollector namespacesCollector;
@@ -53,7 +47,11 @@ public class OcpExtractorService {
         clusters.stream().parallel().forEach(clusterUrl -> {
                     try (
                             OpenShiftClient client = new KubernetesClientBuilder()
-                                    .withConfig(new ConfigBuilder(ocpClientConfig.getConfig()).withMasterUrl(clusterUrl).build())
+                                    .withConfig(
+                                            new ConfigBuilder(ocpClientConfig.get().getConfig())
+                                                    .withMasterUrl(clusterUrl)
+                                                    .build()
+                                    )
                                     .build()
                                     .adapt(OpenShiftClient.class)
                     ) {
