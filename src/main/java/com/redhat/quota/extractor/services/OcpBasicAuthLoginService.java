@@ -12,6 +12,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Response;
 import lombok.extern.java.Log;
+import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
 
 import java.net.URI;
@@ -23,7 +24,7 @@ import com.redhat.quota.extractor.exceptions.BasicAuthLoginException.AuthTokenPa
 import com.redhat.quota.extractor.exceptions.BasicAuthLoginException.AuthTokenNotReceivedException;
 
 @ApplicationScoped
-@Log
+@Slf4j
 public class OcpBasicAuthLoginService {
 
     @Inject

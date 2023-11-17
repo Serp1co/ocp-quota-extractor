@@ -1,6 +1,6 @@
-package com.redhat.quota.extractor.persistance.entities;
+package com.redhat.quota.extractor.entities;
 
-import com.redhat.quota.extractor.persistance.entities.commons.ExtractorEntity;
+import com.redhat.quota.extractor.entities.commons.ExtractorEntity;
 import jakarta.persistence.Entity;
 import lombok.*;
 

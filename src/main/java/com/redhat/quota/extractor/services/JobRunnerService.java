@@ -1,28 +1,18 @@
-package com.redhat.quota.extractor;
+package com.redhat.quota.extractor.services;
 
-import com.redhat.quota.extractor.collectors.ICollector;
-import com.redhat.quota.extractor.collectors.NamespacesCollector;
-import com.redhat.quota.extractor.collectors.NodesCollector;
-import com.redhat.quota.extractor.services.OcpExtractorService;
 import io.quarkus.scheduler.Scheduled;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import lombok.extern.java.Log;
-
-import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
 @ApplicationScoped
-@Log
-public class JobRunner {
+@Slf4j
+public class JobRunnerService {
 
     @Inject
     OcpExtractorService ocpExtractorService;
-
-    final List<ICollector> collectors = List.of(
-            new NamespacesCollector(),
-            new NodesCollector()
-    );
 
     @Transactional
     @Scheduled(cron = "${extractor.job.schedule.time: 0 0 23 * * ?}")
@@ -34,7 +24,7 @@ public class JobRunner {
 
     public void doJob() {
         log.info("full collection job start");
-        ocpExtractorService.executeExtraction(this.collectors);
+        ocpExtractorService.executeExtraction();
         log.info("full collection job done");
     }
 

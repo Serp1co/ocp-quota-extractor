@@ -1,80 +1,79 @@
 package com.redhat.quota.extractor.services;
 
-import com.redhat.quota.extractor.persistance.entities.commons.ExtractorEntity;
+import com.redhat.quota.extractor.collectors.*;
+import com.redhat.quota.extractor.entities.Namespaces;
+import com.redhat.quota.extractor.entities.Nodes;
+import com.redhat.quota.extractor.entities.QuotaNamespaces;
+import com.redhat.quota.extractor.entities.commons.ExtractorEntity;
 import com.redhat.quota.extractor.providers.OcpClientConfig;
-import com.redhat.quota.extractor.collectors.ICollector;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
+import io.smallrye.common.annotation.Blocking;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import lombok.extern.java.Log;
+import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @RequestScoped
-@Log
+@Slf4j
 public class OcpExtractorService {
 
     @Inject
     OcpClientConfig ocpClientConfig;
 
     @Inject
+    NamespacesCollector namespacesCollector;
+
+    @Inject
+    NodesCollector nodesCollector;
+
+    @Inject
+    ClusterResourceQuotasCollector clusterResourceQuotasCollector;
+
+    @Inject
+    QuotaNamespacesCollector quotaNamespacesCollector;
+
+    @Inject
     @ConfigProperty(name = "extractor.client.clusters-url")
     Set<String> clusters;
 
-    /**
-     * do nothing (for now)
-     */
-    @PostConstruct
-    void construct() {
-    }
 
-    /**
-     * do nothing (for now)
-     */
-    @PreDestroy
-    void destroy() {
-    }
-
-    /**
-     * Execute a standard extraction on the clusters using the provided collectors
-     * @param collectors some ICollector
-     */
-    public void executeExtraction(Collection<ICollector> collectors) {
-        clusters.stream().parallel().forEach(clusterUrl ->
-                collectors.stream().parallel().forEach(collector ->
-                        executeExtraction(clusterUrl, collector::collect, ExtractorEntity::persistEntities)
-                )
+    public void executeExtraction() {
+        clusters.stream().parallel().forEach(clusterUrl -> {
+                    try (
+                            OpenShiftClient client = new KubernetesClientBuilder()
+                                    .withConfig(new ConfigBuilder(ocpClientConfig.getConfig()).withMasterUrl(clusterUrl).build())
+                                    .build()
+                                    .adapt(OpenShiftClient.class)
+                    ) {
+                        nodesCollector.collect(client).parallel().forEach(this::persist);
+                        clusterResourceQuotasCollector.collect(client).parallel().forEach(this::persist);
+                        String[] namespaces = namespacesCollector.collect(client).parallel()
+                                .peek(this::persist)
+                                .map(Namespaces::getNamespaceName)
+                                .toArray(String[]::new);
+                        quotaNamespacesCollector.collect(client, namespaces).parallel().forEach(this::persist);
+                    } catch (Exception ex) {
+                        log.error("Exception during extraction for cluster {}", clusterUrl, ex);
+                    }
+                }
         );
     }
 
-    /**
-     * builds the client with a try/with resource operation, for each client applies all the collection operations
-     * then persist the result of the collection on the database
-     *
-     * @param clusterUrl          the cluster to perform the collection against
-     * @param collectionOperation the collection operation to be performed
-     * @param persistOperation    the persist operation to be performed on the cluster operation result
-     */
-    public void executeExtraction(String clusterUrl,
-                                  Function<OpenShiftClient, Stream<? extends ExtractorEntity>> collectionOperation,
-                                  Function<Stream<? extends ExtractorEntity>, Void> persistOperation) {
-        try (
-                OpenShiftClient client = new KubernetesClientBuilder()
-                        .withConfig(new ConfigBuilder(ocpClientConfig.getConfig()).withMasterUrl(clusterUrl).build())
-                        .build()
-                        .adapt(OpenShiftClient.class)
-        ) {
-            log.fine("applying extraction operation for cluster=" + clusterUrl);
-            collectionOperation.andThen(persistOperation).apply(client);
-        }
+    @Blocking
+    void persist(ExtractorEntity entity) {
+        entity.persist();
     }
 
 }

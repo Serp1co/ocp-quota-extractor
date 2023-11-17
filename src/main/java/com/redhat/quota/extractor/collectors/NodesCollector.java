@@ -1,22 +1,26 @@
 package com.redhat.quota.extractor.collectors;
 
-import com.redhat.quota.extractor.persistance.entities.Nodes;
+import com.redhat.quota.extractor.entities.Nodes;
 import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.NodeStatus;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.openshift.client.OpenShiftClient;
+import jakarta.enterprise.context.ApplicationScoped;
 import lombok.Getter;
 import lombok.extern.java.Log;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-@Log
-public class NodesCollector implements ICollector {
-    @Override
-    public Stream<Nodes> collect(OpenShiftClient openShiftClient) {
-        log.info("collecting nodes for cluster=" + openShiftClient.getMasterUrl());
+@Getter
+@ApplicationScoped
+@Slf4j
+public class NodesCollector implements ICollector<Nodes> {
+
+    public Stream<Nodes> collect(OpenShiftClient openShiftClient, String... namespaces) {
+        log.info("collecting nodes for cluster {}", openShiftClient.getMasterUrl());
         List<Node> nodeList = openShiftClient.nodes().list().getItems();
         Stream<NodeCapacityAndAllocatable> capacitiesAndAllocatables = getOcpNodesToCapacityAndAllocatable(nodeList);
         return null;
@@ -53,5 +57,4 @@ public class NodesCollector implements ICollector {
         }
 
     }
-
 }

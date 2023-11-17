@@ -1,19 +1,23 @@
 package com.redhat.quota.extractor.collectors;
 
-import com.redhat.quota.extractor.persistance.entities.Namespaces;
+import com.redhat.quota.extractor.entities.Namespaces;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.openshift.client.OpenShiftClient;
+import jakarta.enterprise.context.ApplicationScoped;
+import lombok.Getter;
 import lombok.extern.java.Log;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.stream.Stream;
 
-@Log
-public class NamespacesCollector implements ICollector {
+@Getter
+@ApplicationScoped
+@Slf4j
+public class NamespacesCollector implements ICollector<Namespaces> {
 
-    @Override
-    public Stream<Namespaces> collect(OpenShiftClient openShiftClient) {
-        log.info("collecting namespaces for cluster=" + openShiftClient.getMasterUrl());
+    public Stream<Namespaces> collect(OpenShiftClient openShiftClient, String... namespaces) {
+        log.info("collecting namespaces for cluster {}", openShiftClient.getMasterUrl());
         return getOcpNamespacesToNamespace(openShiftClient);
     }
 
@@ -26,3 +30,4 @@ public class NamespacesCollector implements ICollector {
     }
 
 }
+
