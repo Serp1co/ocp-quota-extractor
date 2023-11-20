@@ -18,7 +18,7 @@ public class ClusterResourceQuotasCollector implements ICollector<ClusterResourc
 
     @Override
     public Stream<ClusterResourceQuotas> collect(OpenShiftClient openShiftClient, String... namespaces) {
-        log.info("collecting namespaces for cluster {}", openShiftClient.getMasterUrl());
+        log.info("collecting ClusterResourceQuotas for cluster {}", openShiftClient.getMasterUrl());
         return getOcpClusterResourceQuotaToClusterResourceQuotas(openShiftClient);
     }
 

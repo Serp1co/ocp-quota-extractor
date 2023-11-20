@@ -18,7 +18,7 @@ public class NodesCollector implements ICollector<Nodes> {
 
     @Override
     public Stream<Nodes> collect(OpenShiftClient openShiftClient, String... namespaces) {
-        log.info("collecting nodes for cluster {}", openShiftClient.getMasterUrl());
+        log.info("collecting Nodes for cluster {}", openShiftClient.getMasterUrl());
         List<Node> nodeList = openShiftClient.nodes().list().getItems();
         Stream<Tuple<Map<String, Quantity>, Map<String, Quantity>>> capacitiesAndAllocatables =
                 getOcpNodesToCapacityAndAllocatable(nodeList);
@@ -30,7 +30,7 @@ public class NodesCollector implements ICollector<Nodes> {
                     .map()
                     .toList();*/
         //todo
-        return null;
+        return Stream.empty();
     }
 
     Stream<Tuple<Map<String, Quantity>, Map<String, Quantity>>> getOcpNodesToCapacityAndAllocatable(List<Node> ocpNodes) {

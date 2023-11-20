@@ -6,13 +6,10 @@ import com.redhat.quota.extractor.collectors.NodesCollector;
 import com.redhat.quota.extractor.collectors.QuotaNamespacesCollector;
 import com.redhat.quota.extractor.entities.Namespaces;
 import com.redhat.quota.extractor.entities.commons.ExtractorEntity;
-import com.redhat.quota.extractor.providers.OcpClientConfig;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;
-import io.smallrye.common.annotation.Blocking;
 import jakarta.enterprise.context.RequestScoped;
-import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -22,9 +19,6 @@ import java.util.Set;
 @RequestScoped
 @Slf4j
 public class OcpExtractorService {
-
-    @Inject
-    Instance<OcpClientConfig> ocpClientConfig;
 
     @Inject
     NamespacesCollector namespacesCollector;
@@ -48,30 +42,33 @@ public class OcpExtractorService {
                     try (
                             OpenShiftClient client = new KubernetesClientBuilder()
                                     .withConfig(
-                                            new ConfigBuilder(ocpClientConfig.get().getConfig())
+                                            new ConfigBuilder()
+                                                    .withAutoConfigure(false)
+                                                    .withUsername("kubeadmin")
+                                                    .withPassword("N7TEF-hc4xc-StgwE-GtMuY")
+                                                    .withTrustCerts(true)
+                                                    .withDisableHostnameVerification(true)
                                                     .withMasterUrl(clusterUrl)
                                                     .build()
                                     )
                                     .build()
                                     .adapt(OpenShiftClient.class)
                     ) {
-                        nodesCollector.collect(client).parallel().forEach(this::persist);
-                        clusterResourceQuotasCollector.collect(client).parallel().forEach(this::persist);
                         String[] namespaces = namespacesCollector.collect(client).parallel()
-                                .peek(this::persist)
+                                .peek(ExtractorEntity::persistEntityBlocking)
                                 .map(Namespaces::getNamespaceName)
                                 .toArray(String[]::new);
-                        quotaNamespacesCollector.collect(client, namespaces).parallel().forEach(this::persist);
+                        nodesCollector.collect(client).parallel()
+                                .forEach(ExtractorEntity::persistEntityBlocking);
+                        clusterResourceQuotasCollector.collect(client).parallel()
+                                .forEach(ExtractorEntity::persistEntityBlocking);
+                        quotaNamespacesCollector.collect(client, namespaces).parallel()
+                                .forEach(ExtractorEntity::persistEntityBlocking);
                     } catch (Exception ex) {
                         log.error("Exception during extraction for cluster {}", clusterUrl, ex);
                     }
                 }
         );
-    }
-
-    @Blocking
-    void persist(ExtractorEntity entity) {
-        entity.persist();
     }
 
 }

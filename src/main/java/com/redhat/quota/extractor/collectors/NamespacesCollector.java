@@ -16,7 +16,7 @@ public class NamespacesCollector implements ICollector<Namespaces> {
 
     @Override
     public Stream<Namespaces> collect(OpenShiftClient openShiftClient, String... namespaces) {
-        log.info("collecting namespaces for cluster {}", openShiftClient.getMasterUrl());
+        log.info("collecting Namespaces for cluster {}", openShiftClient.getMasterUrl());
         return getOcpNamespacesToNamespace(openShiftClient);
     }
 
