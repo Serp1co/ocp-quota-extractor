@@ -27,7 +27,7 @@ public class ClusterResourceQuotasCollector implements ICollector<ClusterResourc
         List<ClusterResourceQuota> clusterResourceQuotaList =
                 ocpClient.quotas().clusterResourceQuotas().list().getItems();
         return clusterResourceQuotaList.stream().parallel()
-                .map(cls -> new Tuple<>(cls.getFullResourceName(), cls.getStatus()))
+                .map(cls -> { return new Tuple<>(cls.getFullResourceName(), cls.getStatus());})
                 .map(tuple -> {
                     ClusterResourceQuotaStatus status = tuple.getSecond();
                     String quotaName = tuple.getFirst();

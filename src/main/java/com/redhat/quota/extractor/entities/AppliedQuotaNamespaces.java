@@ -11,7 +11,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class QuotaNamespaces extends ExtractorEntity {
+public class AppliedQuotaNamespaces extends ExtractorEntity {
     String Namespace;
     String ClusterResourceQuota;
 }

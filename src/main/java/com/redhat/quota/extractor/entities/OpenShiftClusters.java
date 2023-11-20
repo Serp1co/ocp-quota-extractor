@@ -11,6 +11,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+//tabella di check dei cluster (nota: evo future - usarla per prendere lista cluster da interrogare)
 public class OpenShiftClusters extends ExtractorEntity {
     String ClusterName;
     String ApiUrl; //??
