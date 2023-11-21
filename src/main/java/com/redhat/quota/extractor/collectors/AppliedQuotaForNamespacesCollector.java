@@ -10,7 +10,7 @@ import java.util.stream.Stream;
 
 @ApplicationScoped
 @Slf4j
-public class QuotaNamespacesCollector implements ICollector<AppliedQuotaForNamespaces> {
+public class AppliedQuotaForNamespacesCollector implements ICollector<AppliedQuotaForNamespaces> {
 
     @Override
     public Stream<AppliedQuotaForNamespaces> collect(OpenShiftClient openShiftClient, String[] namespaces) {

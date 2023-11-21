@@ -3,7 +3,7 @@ package com.redhat.quota.extractor.services;
 import com.redhat.quota.extractor.collectors.ClusterResourceQuotasCollector;
 import com.redhat.quota.extractor.collectors.NamespacesCollector;
 import com.redhat.quota.extractor.collectors.NodesCollector;
-import com.redhat.quota.extractor.collectors.QuotaNamespacesCollector;
+import com.redhat.quota.extractor.collectors.AppliedQuotaForNamespacesCollector;
 import com.redhat.quota.extractor.entities.Namespaces;
 import com.redhat.quota.extractor.entities.commons.ExtractorEntity;
 import io.fabric8.kubernetes.client.ConfigBuilder;
@@ -30,7 +30,7 @@ public class OcpExtractorService {
     ClusterResourceQuotasCollector clusterResourceQuotasCollector;
 
     @Inject
-    QuotaNamespacesCollector quotaNamespacesCollector;
+    AppliedQuotaForNamespacesCollector appliedQuotaForNamespacesCollector;
 
     @Inject
     @ConfigProperty(name = "extractor.client.clusters-url")
@@ -45,7 +45,7 @@ public class OcpExtractorService {
                                             new ConfigBuilder()
                                                     .withAutoConfigure(false)
                                                     .withUsername("kubeadmin")
-                                                    .withPassword("N7TEF-hc4xc-StgwE-GtMuY")
+                                                    .withPassword("LrEb6-fpbzR-92jT7-WPv2f")
                                                     .withTrustCerts(true)
                                                     .withDisableHostnameVerification(true)
                                                     .withMasterUrl(clusterUrl)
@@ -62,7 +62,7 @@ public class OcpExtractorService {
                                 .forEach(ExtractorEntity::persistEntityBlocking);
                         clusterResourceQuotasCollector.collect(client).parallel()
                                 .forEach(ExtractorEntity::persistEntityBlocking);
-                        quotaNamespacesCollector.collect(client, namespaces).parallel()
+                        appliedQuotaForNamespacesCollector.collect(client, namespaces).parallel()
                                 .forEach(ExtractorEntity::persistEntityBlocking);
                     } catch (Exception ex) {
                         log.error("Exception during extraction for cluster {}", clusterUrl, ex);
