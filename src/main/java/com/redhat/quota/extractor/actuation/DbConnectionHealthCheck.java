@@ -25,7 +25,7 @@ public class DbConnectionHealthCheck implements HealthCheck {
 
     @Override
     public HealthCheckResponse call() {
-        HealthCheckResponseBuilder responseBuilder = HealthCheckResponse.named("Database connection health check");
+        HealthCheckResponseBuilder responseBuilder = HealthCheckResponse.named("db connection health check");
         try {
             dataSource.getConnection();
             responseBuilder.up();
