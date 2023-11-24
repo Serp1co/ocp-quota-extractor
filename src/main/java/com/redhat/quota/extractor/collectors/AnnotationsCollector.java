@@ -12,7 +12,6 @@ import java.util.List;
 @Slf4j
 public class AnnotationsCollector extends ACollector implements ICollector<Annotations> {
     @Override
-    @Transactional
     public List<Annotations> collect(OpenShiftClient openShiftClient, String... namespaces) {
         return null;
     }

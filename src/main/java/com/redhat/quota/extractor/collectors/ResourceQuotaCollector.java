@@ -13,7 +13,6 @@ import java.util.List;
 public class ResourceQuotaCollector implements ICollector<ResourceQuotas> {
 
     @Override
-    @Transactional
     public List<ResourceQuotas> collect(OpenShiftClient openShiftClient, String... namespaces) {
         log.info("collecting ResourceQuotas for cluster {}", openShiftClient.getMasterUrl());
         log.info("ResourceQuotas={}", openShiftClient.resourceQuotas().list().getItems());

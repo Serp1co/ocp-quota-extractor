@@ -12,7 +12,6 @@ import java.util.List;
 @Slf4j
 public class LabelsCollector extends ACollector implements ICollector<Labels> {
     @Override
-    @Transactional
     public List<Labels> collect(OpenShiftClient openShiftClient, String... namespaces) {
         return null;
     }

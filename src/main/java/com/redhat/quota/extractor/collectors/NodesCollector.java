@@ -20,7 +20,6 @@ import java.util.stream.Stream;
 public class NodesCollector extends ACollector implements ICollector<Nodes> {
 
     @Override
-    @Transactional
     public List<Nodes> collect(OpenShiftClient openShiftClient, String... namespaces) {
         String clusterUrl = openShiftClient.getMasterUrl().toString();
         log.info("Collecting Nodes for cluster={}", clusterUrl);

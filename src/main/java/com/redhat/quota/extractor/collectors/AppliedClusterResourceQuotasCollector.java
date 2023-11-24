@@ -15,7 +15,6 @@ import java.util.stream.Collectors;
 public class AppliedClusterResourceQuotasCollector extends ACollector implements ICollector<AppliedClusterResourceQuotas> {
 
     @Override
-    @Transactional
     public List<AppliedClusterResourceQuotas> collect(OpenShiftClient openShiftClient, String[] namespaces) {
         log.info("collecting AppliedClusterResourceQuotasCollector for cluster {}", openShiftClient.getMasterUrl());
         List<AppliedClusterResourceQuotas> appliedClusterResourceQuotasList = Arrays.stream(namespaces)
