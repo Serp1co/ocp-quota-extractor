@@ -7,44 +7,66 @@ import io.fabric8.openshift.api.model.ClusterResourceQuotaSpec;
 import io.fabric8.openshift.api.model.ClusterResourceQuotaStatus;
 import io.fabric8.openshift.client.OpenShiftClient;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.redhat.quota.extractor.entities.ClusterResourceQuotas.ClusterResourceQuotasBuilder;
+
 @ApplicationScoped
 @Slf4j
-public class ClusterResourceQuotasCollector implements ICollector<ClusterResourceQuotas> {
+public class ClusterResourceQuotasCollector extends ACollector implements ICollector<ClusterResourceQuotas> {
 
     @Override
-    public Stream<ClusterResourceQuotas> collect(OpenShiftClient openShiftClient, String... namespaces) {
-        log.info("collecting ClusterResourceQuotas for cluster {}", openShiftClient.getMasterUrl());
-        return getOcpClusterResourceQuotaToClusterResourceQuotas(openShiftClient);
+    @Transactional
+    public List<ClusterResourceQuotas> collect(OpenShiftClient openShiftClient, String... namespaces) {
+        log.info("collecting ResourceQuotas for cluster {}", openShiftClient.getMasterUrl());
+        List<ClusterResourceQuotas> clusterResourceQuotasStream =
+                getClusterResourceQuotaStream(openShiftClient).collect(Collectors.toList());
+        persist(clusterResourceQuotasStream);
+        return clusterResourceQuotasStream;
     }
 
-    Stream<ClusterResourceQuotas> getOcpClusterResourceQuotaToClusterResourceQuotas(OpenShiftClient ocpClient) {
-        String masterUrl = ocpClient.getMasterUrl().toString();
+    Stream<ClusterResourceQuotas> getClusterResourceQuotaStream(OpenShiftClient ocpClient) {
         List<ClusterResourceQuota> clusterResourceQuotaList =
                 ocpClient.quotas().clusterResourceQuotas().list().getItems();
-        Stream<Tuple<Map<String, Quantity>, Map<String, Quantity>>> clusterHardAndUsed =
-                clusterResourceQuotaList.stream().parallel()
-                        .map(cls -> new Tuple<>(cls.getFullResourceName(), cls.getStatus()))
-                        .map(tuple -> {
-                            //status is null if quota is not used, so we have to use both spec and status
-                            ClusterResourceQuotaStatus status = tuple.getSecond();
-                            String quotaName = tuple.getFirst();
-                            try {
-                                Map<String, Quantity> hard = status.getTotal().getHard();
-                                Map<String, Quantity> used = status.getTotal().getUsed();
-                                return new Tuple<>(hard, used);
-                            } catch (Exception e) {}
-                            return new Tuple<>(null, null);
-                        });
-        log.debug("ClusterHardAndUsed={}", clusterHardAndUsed.collect(Collectors.toList()));
-        return Stream.empty();
+        return clusterResourceQuotaList.stream().parallel()
+                .map(this::getNameAndStatusOrSpec)
+                .map(this::getQuotaFromSpecOrStatus);
     }
 
+    Tuple<String, ?> getNameAndStatusOrSpec(ClusterResourceQuota clusterResourceQuota) {
+        //status is null if quota is not used, so we have to use both spec and status
+        if (Optional.ofNullable(clusterResourceQuota.getStatus()).isPresent()) {
+            return new Tuple<>(clusterResourceQuota.getFullResourceName(), clusterResourceQuota.getStatus());
+        } else {
+            return new Tuple<>(clusterResourceQuota.getFullResourceName(), clusterResourceQuota.getSpec());
+        }
+    }
+
+    ClusterResourceQuotas getQuotaFromSpecOrStatus(Tuple<String, ?> tuple) {
+        String quotaName = tuple.getFirst();
+        ClusterResourceQuotasBuilder builder =
+                ClusterResourceQuotas.builder().ClusterResourceQuotaName(quotaName);
+        if (tuple.getSecond() instanceof ClusterResourceQuotaSpec spec) {
+            Map<String, Quantity> hard = spec.getQuota().getHard();
+            builder.HardPods(hard.get("pods").getNumericalAmount());
+            builder.HardSecrets(hard.get("secrets").getNumericalAmount());
+        }
+        if (tuple.getSecond() instanceof ClusterResourceQuotaStatus status) {
+            Map<String, Quantity> hard = status.getTotal().getHard();
+            Map<String, Quantity> used = status.getTotal().getUsed();
+            builder.HardPods(hard.get("pods").getNumericalAmount());
+            builder.HardSecrets(hard.get("secrets").getNumericalAmount());
+            builder.UsedPods(used.get("pods").getNumericalAmount());
+            builder.UsedSecrets(used.get("secrets").getNumericalAmount());
+        }
+        return builder.build();
+    }
 
 }

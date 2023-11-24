@@ -5,11 +5,11 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
-import java.util.stream.Stream;
+import java.util.List;
 
 public interface ICollector<T> {
 
-    Stream<T> collect(OpenShiftClient openShiftClient, String... namespaces);
+    List<T> collect(OpenShiftClient openShiftClient, String... namespaces);
 
     @Getter
     @Setter

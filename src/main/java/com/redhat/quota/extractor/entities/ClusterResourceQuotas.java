@@ -4,6 +4,8 @@ import com.redhat.quota.extractor.entities.commons.ExtractorEntity;
 import jakarta.persistence.Entity;
 import lombok.*;
 
+import java.math.BigDecimal;
+
 @Entity
 @Getter
 @Setter
@@ -12,16 +14,9 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ClusterResourceQuotas extends ExtractorEntity {
-    String Cluster;
-    String QuotaName;
-    String RequestID;
-    String LimitsCPU;
-    String RequestMemory;
-    String UsedLimitCPU;
-    String UsedLimitMemory;
-    String UsedRequestCPU;
-    String UsedRequestMemory;
-    String Ambito; //??
-    String Application; //??
-    String ServiceModel; //??
+    String ClusterResourceQuotaName;
+    BigDecimal HardPods;
+    BigDecimal HardSecrets;
+    BigDecimal UsedPods;
+    BigDecimal UsedSecrets;
 }

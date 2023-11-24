@@ -2,13 +2,14 @@ package com.redhat.quota.extractor.collectors;
 
 import com.redhat.quota.extractor.entities.Nodes;
 import io.fabric8.kubernetes.api.model.Node;
-import io.fabric8.kubernetes.api.model.NodeStatus;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.openshift.client.OpenShiftClient;
 import jakarta.enterprise.context.ApplicationScoped;
-import lombok.extern.java.Log;
+import jakarta.transaction.Transactional;
+import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -16,27 +17,73 @@ import java.util.stream.Stream;
 
 @ApplicationScoped
 @Slf4j
-public class NodesCollector implements ICollector<Nodes> {
+public class NodesCollector extends ACollector implements ICollector<Nodes> {
 
     @Override
-    public Stream<Nodes> collect(OpenShiftClient openShiftClient, String... namespaces) {
-        log.info("Collecting Nodes for cluster %s".formatted(openShiftClient.getMasterUrl()));
+    @Transactional
+    public List<Nodes> collect(OpenShiftClient openShiftClient, String... namespaces) {
+        String clusterUrl = openShiftClient.getMasterUrl().toString();
+        log.info("Collecting Nodes for cluster={}", clusterUrl);
         List<Node> nodeList = openShiftClient.nodes().list().getItems();
-        log.debug("Nodes={}", nodeList);
-        Stream<Tuple<Map<String, Quantity>, Map<String, Quantity>>> capacitiesAndAllocatables =
+        log.debug("nodeList={}", nodeList);
+        Stream<Tuple<Capacity, Capacity>> capacitiesAllocatable =
                 getOcpNodesToCapacityAndAllocatable(nodeList);
-        log.debug("NodesCapacityAndAllocatables={}", capacitiesAndAllocatables.collect(Collectors.toList()));
-        return mapCapacityAndAllocatableToNodes(capacitiesAndAllocatables);
+        List<Nodes> nodesStream = mapCapacityAllocatableToNodes(capacitiesAllocatable, clusterUrl)
+                .collect(Collectors.toList());
+        persist(nodesStream);
+        return nodesStream;
     }
 
-    Stream<Nodes> mapCapacityAndAllocatableToNodes(Stream<Tuple<Map<String, Quantity>, Map<String, Quantity>>> capacityAndAllocatables) {
-        return Stream.empty();
+    Stream<Nodes> mapCapacityAllocatableToNodes(Stream<Tuple<Capacity, Capacity>> capacityAndAllocatables,
+                                               String clusterUrl) {
+        return capacityAndAllocatables.map(
+                tuple -> {
+                    Capacity capacity = tuple.getFirst();
+                    Capacity allocatable = tuple.getSecond();
+                    BigDecimal usedCpu = capacity.cpu.subtract(allocatable.cpu);
+                    BigDecimal usedMemory = capacity.memory.subtract(allocatable.memory);
+                    BigDecimal usedStorage = capacity.ephemeralStorage.subtract(allocatable.ephemeralStorage);
+                    return Nodes.builder()
+                            .nodeName("")
+                            .cluster(clusterUrl)
+                            .CPU(usedCpu)
+                            .memory(usedMemory)
+                            .disk(usedStorage)
+                            .build();
+                }
+                );
+
     }
 
-    Stream<Tuple<Map<String, Quantity>, Map<String, Quantity>>> getOcpNodesToCapacityAndAllocatable(List<Node> ocpNodes) {
+    Stream<Tuple<Capacity, Capacity>> getOcpNodesToCapacityAndAllocatable(List<Node> ocpNodes) {
         return ocpNodes.stream()
                 .map(Node::getStatus)
-                .map(nodeStatus -> new Tuple<>(nodeStatus.getCapacity(), nodeStatus.getAllocatable()));
+                .map(nodeStatus -> {
+                    Map<String, Quantity> capacityMap = nodeStatus.getCapacity();
+                    Map<String, Quantity> allocatableMap = nodeStatus.getAllocatable();
+                    return new Tuple<>(Capacity.fromMap(capacityMap),
+                            Capacity.fromMap(allocatableMap));
+                });
+    }
+
+
+    @Builder
+    static class Capacity {
+        String nodeName;
+        BigDecimal cpu;
+        BigDecimal ephemeralStorage;
+        BigDecimal memory;
+        BigDecimal pods;
+
+        static Capacity fromMap(Map<String, Quantity> map) {
+            return Capacity.builder()
+                    .cpu(map.get("cpu").getNumericalAmount())
+                    .pods(map.get("pods").getNumericalAmount())
+                    .ephemeralStorage(map.get("ephemeral-storage").getNumericalAmount())
+                    .memory(map.get("memory").getNumericalAmount())
+                    .build();
+
+        }
     }
 
 }

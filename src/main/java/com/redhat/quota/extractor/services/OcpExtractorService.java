@@ -1,19 +1,17 @@
 package com.redhat.quota.extractor.services;
 
-import com.redhat.quota.extractor.collectors.ClusterResourceQuotasCollector;
-import com.redhat.quota.extractor.collectors.NamespacesCollector;
-import com.redhat.quota.extractor.collectors.NodesCollector;
-import com.redhat.quota.extractor.collectors.AppliedQuotaForNamespacesCollector;
+import com.redhat.quota.extractor.collectors.*;
 import com.redhat.quota.extractor.entities.Namespaces;
-import com.redhat.quota.extractor.entities.commons.ExtractorEntity;
+import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;
+import io.smallrye.config.ConfigMapping;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 
+import java.util.Optional;
 import java.util.Set;
 
 @RequestScoped
@@ -30,45 +28,57 @@ public class OcpExtractorService {
     ClusterResourceQuotasCollector clusterResourceQuotasCollector;
 
     @Inject
-    AppliedQuotaForNamespacesCollector appliedQuotaForNamespacesCollector;
+    AppliedClusterResourceQuotasCollector appliedClusterResourceQuotasCollector;
 
     @Inject
-    @ConfigProperty(name = "extractor.client.clusters-url")
-    Set<String> clusters;
+    LabelsCollector labelsCollector;
 
+    @Inject
+    AnnotationsCollector annotationsCollector;
+
+    @ConfigMapping(prefix = "extractor.client")
+    interface ExtractorClientConfig {
+        Set<String> clusters();
+        String username();
+        String password();
+        Optional<Boolean> ssl();
+    }
+
+    @Inject
+    ExtractorClientConfig extractorClientConfig;
 
     public void executeExtraction() {
-        clusters.stream().parallel().forEach(clusterUrl -> {
+        extractorClientConfig.clusters().stream().parallel().forEach(clusterUrl -> {
                     try (
                             OpenShiftClient client = new KubernetesClientBuilder()
                                     .withConfig(
-                                            new ConfigBuilder()
-                                                    .withAutoConfigure(false)
-                                                    .withUsername("kubeadmin")
-                                                    .withPassword("LrEb6-fpbzR-92jT7-WPv2f")
-                                                    .withTrustCerts(true)
-                                                    .withDisableHostnameVerification(true)
-                                                    .withMasterUrl(clusterUrl)
-                                                    .build()
+                                            getConfig(clusterUrl, extractorClientConfig)
                                     )
                                     .build()
                                     .adapt(OpenShiftClient.class)
                     ) {
-                        String[] namespaces = namespacesCollector.collect(client).parallel()
-                                .peek(ExtractorEntity::persistEntityBlocking)
+                        String[] namespaces = namespacesCollector.collect(client)
+                                .stream().parallel()
                                 .map(Namespaces::getNamespaceName)
                                 .toArray(String[]::new);
-                        nodesCollector.collect(client).parallel()
-                                .forEach(ExtractorEntity::persistEntityBlocking);
-                        clusterResourceQuotasCollector.collect(client).parallel()
-                                .forEach(ExtractorEntity::persistEntityBlocking);
-                        appliedQuotaForNamespacesCollector.collect(client, namespaces).parallel()
-                                .forEach(ExtractorEntity::persistEntityBlocking);
+                        nodesCollector.collect(client);
+                        clusterResourceQuotasCollector.collect(client);
+                        appliedClusterResourceQuotasCollector.collect(client, namespaces);
                     } catch (Exception ex) {
                         log.error("Exception during extraction for cluster {}", clusterUrl, ex);
                     }
                 }
         );
+    }
+
+    static Config getConfig(String clusterUrl, ExtractorClientConfig extractorClientConfig) {
+        ConfigBuilder cf = new ConfigBuilder()
+                .withAutoConfigure(false)
+                .withMasterUrl(clusterUrl)
+                .withUsername(extractorClientConfig.username())
+                .withPassword(extractorClientConfig.password());
+        return extractorClientConfig.ssl().orElse(true) ?
+                cf.build() : cf.withTrustCerts(true).withDisableHostnameVerification(true).build();
     }
 
 }

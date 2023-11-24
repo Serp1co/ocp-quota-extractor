@@ -4,6 +4,8 @@ import com.redhat.quota.extractor.entities.commons.ExtractorEntity;
 import jakarta.persistence.Entity;
 import lombok.*;
 
+import java.math.BigDecimal;
+
 @Entity
 @Getter
 @Setter
@@ -14,7 +16,7 @@ import lombok.*;
 public class Nodes extends ExtractorEntity {
     String cluster;
     String nodeName;
-    String CPU;
-    String memory;
-    String disk;
+    BigDecimal CPU;
+    BigDecimal memory;
+    BigDecimal disk;
 }

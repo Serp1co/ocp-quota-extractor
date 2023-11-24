@@ -5,19 +5,23 @@ import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.openshift.client.OpenShiftClient;
 import jakarta.enterprise.context.ApplicationScoped;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @ApplicationScoped
 @Slf4j
-public class NamespacesCollector implements ICollector<Namespaces> {
+public class NamespacesCollector extends ACollector implements ICollector<Namespaces> {
 
     @Override
-    public Stream<Namespaces> collect(OpenShiftClient openShiftClient, String... namespaces) {
+    public List<Namespaces> collect(OpenShiftClient openShiftClient, String... namespaces) {
         log.info("collecting Namespaces for cluster {}", openShiftClient.getMasterUrl());
-        return getOcpNamespacesToNamespace(openShiftClient);
+        List<Namespaces> namespacesStream = getOcpNamespacesToNamespace(openShiftClient)
+                .collect(Collectors.toList());
+        persist(namespacesStream);
+        return namespacesStream;
     }
 
     Stream<Namespaces> getOcpNamespacesToNamespace(OpenShiftClient ocpClient) {
