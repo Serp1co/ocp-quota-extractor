@@ -2,6 +2,8 @@ package com.redhat.quota.extractor.services;
 
 import com.redhat.quota.extractor.collectors.*;
 import com.redhat.quota.extractor.entities.Namespaces;
+import io.fabric8.kubernetes.api.model.AuthProviderConfig;
+import io.fabric8.kubernetes.api.model.AuthProviderConfigBuilder;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
@@ -38,7 +40,8 @@ public class OcpExtractorService {
                 .withAutoConfigure(false)
                 .withMasterUrl(clusterUrl)
                 .withUsername(extractorClientConfig.username())
-                .withPassword(extractorClientConfig.password());
+                .withPassword(extractorClientConfig.password())
+                .withUserAgent(extractorClientConfig.username());
         return extractorClientConfig.ssl().orElse(true) ?
                 cf.build() : cf.withTrustCerts(true).withDisableHostnameVerification(true).build();
     }
@@ -53,6 +56,8 @@ public class OcpExtractorService {
                                     .build()
                                     .adapt(OpenShiftClient.class)
                     ) {
+                        log.info("Client config={}",client.getConfiguration());
+                        log.info("Client currentUser={}",client.currentUser());
                         String[] namespaces = namespacesCollector.collect(client)
                                 .stream().parallel()
                                 .map(Namespaces::getNamespaceName)
