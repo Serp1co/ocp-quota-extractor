@@ -2,24 +2,18 @@ package com.redhat.quota.extractor.services;
 
 import com.redhat.quota.extractor.collectors.*;
 import com.redhat.quota.extractor.entities.Namespaces;
-import io.fabric8.kubernetes.api.model.AuthProviderConfig;
-import io.fabric8.kubernetes.api.model.AuthProviderConfigBuilder;
-import io.fabric8.kubernetes.client.Config;
-import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;
-import io.smallrye.config.ConfigMapping;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
-
-import java.util.Optional;
-import java.util.Set;
 
 @RequestScoped
 @Slf4j
 public class OcpExtractorService {
 
+    @Inject
+    ClientConfigService clientConfigService;
     @Inject
     NamespacesCollector namespacesCollector;
     @Inject
@@ -32,32 +26,16 @@ public class OcpExtractorService {
     LabelsCollector labelsCollector;
     @Inject
     AnnotationsCollector annotationsCollector;
-    @Inject
-    ExtractorClientConfig extractorClientConfig;
 
-    static Config getConfig(String clusterUrl, ExtractorClientConfig extractorClientConfig) {
-        ConfigBuilder cf = new ConfigBuilder()
-                .withAutoConfigure(false)
-                .withMasterUrl(clusterUrl)
-                .withUsername(extractorClientConfig.username())
-                .withPassword(extractorClientConfig.password())
-                .withUserAgent(extractorClientConfig.username());
-        return extractorClientConfig.ssl().orElse(true) ?
-                cf.build() : cf.withTrustCerts(true).withDisableHostnameVerification(true).build();
-    }
 
     public void executeExtraction() {
-        extractorClientConfig.clusters().stream().parallel().forEach(clusterUrl -> {
-                    try (
+        clientConfigService.getConfigsForClusters().forEach(config -> {
+            try (
                             OpenShiftClient client = new KubernetesClientBuilder()
-                                    .withConfig(
-                                            getConfig(clusterUrl, extractorClientConfig)
-                                    )
+                                    .withConfig(config)
                                     .build()
                                     .adapt(OpenShiftClient.class)
                     ) {
-                        log.info("Client config={}",client.getConfiguration());
-                        log.info("Client currentUser={}",client.currentUser());
                         String[] namespaces = namespacesCollector.collect(client)
                                 .stream().parallel()
                                 .map(Namespaces::getNamespaceName)
@@ -66,18 +44,11 @@ public class OcpExtractorService {
                         clusterResourceQuotasCollector.collect(client);
                         appliedClusterResourceQuotasCollector.collect(client, namespaces);
                     } catch (Exception ex) {
-                        log.error("Exception during extraction for cluster {}", clusterUrl, ex);
+                        log.error("Exception during extraction for cluster {}", config.getMasterUrl(), ex);
                     }
                 }
         );
     }
 
-    @ConfigMapping(prefix = "extractor.client")
-    interface ExtractorClientConfig {
-        Set<String> clusters();
-        String username();
-        String password();
-        Optional<Boolean> ssl();
-    }
 
 }

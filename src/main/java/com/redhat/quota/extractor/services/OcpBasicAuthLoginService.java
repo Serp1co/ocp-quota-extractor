@@ -1,5 +1,7 @@
 package com.redhat.quota.extractor.services;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.quota.extractor.exceptions.BasicAuthLoginException;
 import com.redhat.quota.extractor.exceptions.BasicAuthLoginException.AuthTokenNotReceivedException;
 import com.redhat.quota.extractor.exceptions.BasicAuthLoginException.AuthTokenParseException;
@@ -9,29 +11,30 @@ import io.quarkus.rest.client.reactive.ClientRedirectHandler;
 import io.smallrye.config.ConfigMapping;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.HeaderParam;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Response;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
 
 import java.net.URI;
 import java.util.Base64;
+import java.util.Map;
 import java.util.Optional;
 
 @ApplicationScoped
 @Slf4j
 public class OcpBasicAuthLoginService {
 
-    @Inject
-    LoginConfigs loginConfigs;
+    static final String responseType = "token";
 
-    static OcpAuthClient buildLoginClient(String uri) {
+    @Inject
+    ObjectMapper objectMapper;
+
+    static OcpLoginAuthClient buildLoginClient(String uri) {
         return RestClientBuilder.newBuilder()
                 .baseUri(URI.create(uri))
-                .build(OcpAuthClient.class);
+                .build(OcpLoginAuthClient.class);
     }
 
     static String getBasicAuthString(String username, String password) {
@@ -39,10 +42,14 @@ public class OcpBasicAuthLoginService {
                 .encodeToString((username + ":" + password).getBytes());
     }
 
-    static String doLoginAndReturnToken(String url, String clientId,
-                                        String responseType, String username,
-                                        String password) throws LoginException {
-        OcpAuthClient ocpAuthClient = buildLoginClient(url);
+    static OcpDiscoveryAuthClient buildDiscoveryClient(String uri) {
+        return RestClientBuilder.newBuilder()
+                .baseUri(URI.create(uri))
+                .build(OcpDiscoveryAuthClient.class);
+    }
+
+    static String getToken(String url, String clientId, String username, String password) throws LoginException {
+        OcpLoginAuthClient ocpAuthClient = buildLoginClient(url);
         String basicAuthString =
                 getBasicAuthString(username, password);
         try (Response redirectionResponse =
@@ -67,27 +74,28 @@ public class OcpBasicAuthLoginService {
     }
 
     /**
-     * logs in with basic auth and returns the oauth token to propagate
+     * logs in with basic auth and returns the oauth token
      *
      * @return the auth token
      * @throws LoginException failed login or failed oauth token
      */
-    public String login() throws LoginException {
-        LoginConfigs.BasicAuthClientConfigs basicAuthClientConfigs =
-                loginConfigs.basicAuth().orElseThrow(BasicAuthLoginConfigurationException::new);
-        return doLoginAndReturnToken(
-                basicAuthClientConfigs.url(),
-                basicAuthClientConfigs.clientId(),
-                basicAuthClientConfigs.responseType(),
-                basicAuthClientConfigs.credentials().username(),
-                basicAuthClientConfigs.credentials().password());
+    public String login(String apiUrl, String client_id, String username, String psw) {
+        OcpDiscoveryAuthClient ocpAuthClient = buildDiscoveryClient(apiUrl);
+        String response = ocpAuthClient.wellKnown();
+        try {
+            Map<String, String> map = objectMapper.readValue(response, Map.class);
+            String authUrl = map.get("authorization_endpoint");
+            return getToken(authUrl, client_id, username, psw);
+        } catch (JsonProcessingException e) {
+            log.error("Error parsing discovery response");
+            throw new RuntimeException(e);
+        }
     }
 
     /**
      * Login rest client interface, to use programmatically
      */
-    @Path("/oauth")
-    interface OcpAuthClient {
+    interface OcpLoginAuthClient {
 
         /**
          * always follow redirects (not only on GET requests)
@@ -111,7 +119,6 @@ public class OcpBasicAuthLoginService {
          * @param auth          the authorization header
          * @return the login response
          */
-        @Path("/authorize")
         @POST
         Response login(@QueryParam("client_id") String client_id,
                        @QueryParam("response_type") String response_type,
@@ -119,26 +126,20 @@ public class OcpBasicAuthLoginService {
 
     }
 
-    @ConfigMapping(prefix = "extractor.client.login.auth")
-    interface LoginConfigs {
+    /**
+     * Login rest client interface, to use programmatically
+     */
+    interface OcpDiscoveryAuthClient {
 
-        Optional<BasicAuthClientConfigs> basicAuth();
+        /**
+         * try to get the wellknown endpoint for oicd discovery
+         *
+         * @return the login response
+         */
+        @Path("/.well-known/oauth-authorization-server")
+        @GET
+        String wellKnown();
 
-        interface BasicAuthClientConfigs {
-            String url();
-
-            String clientId();
-
-            String responseType();
-
-            BasicAuthCredentialsConfigs credentials();
-
-            interface BasicAuthCredentialsConfigs {
-                String password();
-
-                String username();
-            }
-        }
     }
 
 }
