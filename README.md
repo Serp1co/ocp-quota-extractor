@@ -38,4 +38,4 @@ The application, packaged as an _über-jar_, is now runnable using `java -jar ta
 1) Fork or clone this repository into your repository
 2) Create a new app and select GIT source repository
 3) Deploy the image to the OCP Cluster
-4) Add the required secrets to the deployment:
+4) Add the required secrets to the deployment
