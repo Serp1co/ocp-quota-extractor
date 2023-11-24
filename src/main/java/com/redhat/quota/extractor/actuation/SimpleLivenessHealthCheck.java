@@ -6,7 +6,7 @@ import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.Liveness;
 
 /**
- * at /health/live
+ * at /q/health/live
  */
 @Liveness
 @ApplicationScoped

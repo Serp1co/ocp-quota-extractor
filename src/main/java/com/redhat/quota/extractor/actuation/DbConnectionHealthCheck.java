@@ -12,7 +12,7 @@ import javax.sql.DataSource;
 import java.sql.SQLException;
 
 /**
- * at /health/ready
+ * at /q/health/ready
  */
 @Readiness
 @ApplicationScoped
