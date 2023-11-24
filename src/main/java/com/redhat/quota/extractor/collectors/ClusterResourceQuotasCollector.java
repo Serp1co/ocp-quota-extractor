@@ -1,6 +1,7 @@
 package com.redhat.quota.extractor.collectors;
 
 import com.redhat.quota.extractor.entities.ClusterResourceQuotas;
+import com.redhat.quota.extractor.entities.ClusterResourceQuotas.ClusterResourceQuotasBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.openshift.api.model.ClusterResourceQuota;
 import io.fabric8.openshift.api.model.ClusterResourceQuotaSpec;
@@ -15,8 +16,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import com.redhat.quota.extractor.entities.ClusterResourceQuotas.ClusterResourceQuotasBuilder;
 
 @ApplicationScoped
 @Slf4j

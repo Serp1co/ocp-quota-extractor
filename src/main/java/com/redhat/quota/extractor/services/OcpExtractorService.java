@@ -20,32 +20,28 @@ public class OcpExtractorService {
 
     @Inject
     NamespacesCollector namespacesCollector;
-
     @Inject
     NodesCollector nodesCollector;
-
     @Inject
     ClusterResourceQuotasCollector clusterResourceQuotasCollector;
-
     @Inject
     AppliedClusterResourceQuotasCollector appliedClusterResourceQuotasCollector;
-
     @Inject
     LabelsCollector labelsCollector;
-
     @Inject
     AnnotationsCollector annotationsCollector;
-
-    @ConfigMapping(prefix = "extractor.client")
-    interface ExtractorClientConfig {
-        Set<String> clusters();
-        String username();
-        String password();
-        Optional<Boolean> ssl();
-    }
-
     @Inject
     ExtractorClientConfig extractorClientConfig;
+
+    static Config getConfig(String clusterUrl, ExtractorClientConfig extractorClientConfig) {
+        ConfigBuilder cf = new ConfigBuilder()
+                .withAutoConfigure(false)
+                .withMasterUrl(clusterUrl)
+                .withUsername(extractorClientConfig.username())
+                .withPassword(extractorClientConfig.password());
+        return extractorClientConfig.ssl().orElse(true) ?
+                cf.build() : cf.withTrustCerts(true).withDisableHostnameVerification(true).build();
+    }
 
     public void executeExtraction() {
         extractorClientConfig.clusters().stream().parallel().forEach(clusterUrl -> {
@@ -71,14 +67,12 @@ public class OcpExtractorService {
         );
     }
 
-    static Config getConfig(String clusterUrl, ExtractorClientConfig extractorClientConfig) {
-        ConfigBuilder cf = new ConfigBuilder()
-                .withAutoConfigure(false)
-                .withMasterUrl(clusterUrl)
-                .withUsername(extractorClientConfig.username())
-                .withPassword(extractorClientConfig.password());
-        return extractorClientConfig.ssl().orElse(true) ?
-                cf.build() : cf.withTrustCerts(true).withDisableHostnameVerification(true).build();
+    @ConfigMapping(prefix = "extractor.client")
+    interface ExtractorClientConfig {
+        Set<String> clusters();
+        String username();
+        String password();
+        Optional<Boolean> ssl();
     }
 
 }

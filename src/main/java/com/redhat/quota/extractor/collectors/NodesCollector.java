@@ -35,7 +35,7 @@ public class NodesCollector extends ACollector implements ICollector<Nodes> {
     }
 
     Stream<Nodes> mapCapacityAllocatableToNodes(Stream<Tuple<Capacity, Capacity>> capacityAndAllocatables,
-                                               String clusterUrl) {
+                                                String clusterUrl) {
         return capacityAndAllocatables.map(
                 tuple -> {
                     Capacity capacity = tuple.getFirst();
@@ -51,7 +51,7 @@ public class NodesCollector extends ACollector implements ICollector<Nodes> {
                             .disk(usedStorage)
                             .build();
                 }
-                );
+        );
 
     }
 
@@ -82,7 +82,6 @@ public class NodesCollector extends ACollector implements ICollector<Nodes> {
                     .ephemeralStorage(map.get("ephemeral-storage").getNumericalAmount())
                     .memory(map.get("memory").getNumericalAmount())
                     .build();
-
         }
     }
 
