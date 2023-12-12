@@ -8,7 +8,6 @@ import io.fabric8.openshift.api.model.ClusterResourceQuotaSpec;
 import io.fabric8.openshift.api.model.ClusterResourceQuotaStatus;
 import io.fabric8.openshift.client.OpenShiftClient;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
@@ -53,16 +52,16 @@ public class ClusterResourceQuotasCollector extends ACollector implements IColle
                 ClusterResourceQuotas.builder().ClusterResourceQuotaName(quotaName);
         if (tuple.getSecond() instanceof ClusterResourceQuotaSpec spec) {
             Map<String, Quantity> hard = spec.getQuota().getHard();
-            builder.HardPods(hard.get("pods").getNumericalAmount());
-            builder.HardSecrets(hard.get("secrets").getNumericalAmount());
+            builder.HardPods(hard.get("pods") != null ? hard.get("pods").getNumericalAmount() : null);
+            builder.HardSecrets(hard.get("secrets") != null ? hard.get("secrets").getNumericalAmount() : null);
         }
         if (tuple.getSecond() instanceof ClusterResourceQuotaStatus status) {
             Map<String, Quantity> hard = status.getTotal().getHard();
             Map<String, Quantity> used = status.getTotal().getUsed();
-            builder.HardPods(hard.get("pods").getNumericalAmount());
-            builder.HardSecrets(hard.get("secrets").getNumericalAmount());
-            builder.UsedPods(used.get("pods").getNumericalAmount());
-            builder.UsedSecrets(used.get("secrets").getNumericalAmount());
+            builder.HardPods(hard.get("pods") != null ? hard.get("pods").getNumericalAmount() : null);
+            builder.HardSecrets(hard.get("secrets") != null ? hard.get("secrets").getNumericalAmount() : null);
+            builder.UsedPods(used.get("pods") != null ? hard.get("pods").getNumericalAmount() : null);
+            builder.UsedSecrets(used.get("secrets") != null ? hard.get("secrets").getNumericalAmount() : null);
         }
         return builder.build();
     }
