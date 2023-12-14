@@ -5,15 +5,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.quota.extractor.exceptions.BasicAuthLoginException;
 import com.redhat.quota.extractor.exceptions.BasicAuthLoginException.AuthTokenNotReceivedException;
 import com.redhat.quota.extractor.exceptions.BasicAuthLoginException.AuthTokenParseException;
-import com.redhat.quota.extractor.exceptions.BasicAuthLoginException.BasicAuthLoginConfigurationException;
 import com.redhat.quota.extractor.exceptions.LoginException;
 import io.quarkus.rest.client.reactive.ClientRedirectHandler;
-import io.smallrye.config.ConfigMapping;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Response;
-import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
 

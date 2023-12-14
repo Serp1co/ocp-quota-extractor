@@ -15,20 +15,5 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class AppliedClusterResourceQuotas extends ExtractorEntity {
     String Namespace;
-    String Cluster;
-    String AppliedClusterResourceQuotaName;
-    String RequestID;
-    BigDecimal LimitsCPU;
-    BigDecimal RequestMemory;
-    BigDecimal UsedLimitCPU;
-    BigDecimal UsedLimitMemory;
-    BigDecimal UsedRequestCPU;
-    BigDecimal UsedRequestMemory;
-    BigDecimal HardPods;
-    BigDecimal HardSecrets;
-    BigDecimal UsedPods;
-    BigDecimal UsedSecrets;
-    String Ambito; //??
-    String Application; //??
-    String ServiceModel; //??
+    String ClusterResourceQuotaName;
 }

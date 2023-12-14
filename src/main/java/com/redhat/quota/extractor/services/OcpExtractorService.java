@@ -2,13 +2,10 @@ package com.redhat.quota.extractor.services;
 
 import com.redhat.quota.extractor.collectors.*;
 import com.redhat.quota.extractor.entities.Namespaces;
-import com.redhat.quota.extractor.entities.commons.ExtractorEntity;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;
-import io.smallrye.common.annotation.Blocking;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
-import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 
 @RequestScoped

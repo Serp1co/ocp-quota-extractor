@@ -43,11 +43,11 @@ public class ClusterResourceQuotasCollector extends ACollector implements IColle
         List<ClusterResourceQuota> clusterResourceQuotaList =
                 ocpClient.quotas().clusterResourceQuotas().list().getItems();
         return clusterResourceQuotaList.stream().parallel()
-                .map(this::getNameAndSpec)
+                .map(clusterResourceQuota -> getNameAndSpec(ocpClient.getMasterUrl().toString(), clusterResourceQuota))
                 .map(this::getQuotaFromStatus);
     }
 
-    Tuple<ClusterResourceQuotasBuilder, Optional<ClusterResourceQuotaStatus>> getNameAndSpec(ClusterResourceQuota clusterResourceQuota) {
+    Tuple<ClusterResourceQuotasBuilder, Optional<ClusterResourceQuotaStatus>> getNameAndSpec(String clusterUrl, ClusterResourceQuota clusterResourceQuota) {
         ObjectMeta metadata = clusterResourceQuota.getMetadata();
         List<Labels> labels = new ArrayList<>() {{
             metadata.getLabels().forEach((k,v) -> this.add(Labels.builder().LabelName(k).LabelValue(v).build()));
@@ -57,6 +57,7 @@ public class ClusterResourceQuotasCollector extends ACollector implements IColle
                     this.add(Annotations.builder().AnnotationName(k).AnnotationValue(v).build()));
         }};
         ClusterResourceQuotasBuilder builder = fromSpec(metadata.getName(), clusterResourceQuota.getSpec())
+                .Cluster(clusterUrl)
                 .labels(labels)
                 .annotations(annotations);
         return new Tuple<>(builder, Optional.ofNullable(clusterResourceQuota.getStatus()));
