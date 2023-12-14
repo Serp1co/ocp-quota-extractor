@@ -1,0 +1,25 @@
+apiVersion: quota.openshift.io/v1
+kind: ClusterResourceQuota
+metadata:
+  annotations:
+    myannotation/orderid: technical
+  labels:
+    app.kubernetes.io/instance: myinstance
+  name: app1
+spec:
+  quota:
+    hard:
+      limits.cpu: '20'
+      limits.ephemeral-storage: 110Gi
+      limits.memory: 70Gi
+      requests.cpu: '10'
+      requests.ephemeral-storage: 110Gi
+      requests.memory: 70Gi
+  selector:
+    annotations: null
+    labels:
+      matchLabels:
+        myannotation/ambito: c0
+        myannotation/application: wep
+        myannotation/commercial-quota: 'false'
+        myannotation/servicemodel: red

@@ -1,8 +1,11 @@
 package com.redhat.quota.extractor.services;
 
+import com.redhat.quota.extractor.entities.commons.ExtractorEntity;
 import io.quarkus.scheduler.Scheduled;
+import io.smallrye.common.annotation.Blocking;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 
 @ApplicationScoped
@@ -21,9 +24,17 @@ public class JobRunnerService {
 
     public void doJob() {
         log.info("full collection job start");
+        prepareForJob();
         ocpExtractorService.executeExtraction();
         log.info("full collection job end");
     }
 
+    @Blocking
+    @Transactional
+    void prepareForJob() {
+        log.info("Clearing up database");
+        ExtractorEntity.deleteAll();
+        log.info("Database clear");
+    }
 }
 

@@ -16,7 +16,7 @@ public abstract class ACollector {
     @Transactional
     void persist(List<? extends ExtractorEntity> entityStream) {
         log.debug("persisting entities={}", entityStream);
-        ExtractorEntity.persist(entityStream);
+        ExtractorEntity.persistAll(entityStream);
     }
 
 }

@@ -2,6 +2,7 @@ package com.redhat.quota.extractor.collectors;
 
 import com.redhat.quota.extractor.entities.Nodes;
 import io.fabric8.kubernetes.api.model.Node;
+import io.fabric8.kubernetes.api.model.NodeStatus;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.openshift.client.OpenShiftClient;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -25,50 +26,52 @@ public class NodesCollector extends ACollector implements ICollector<Nodes> {
         log.info("Collecting Nodes for cluster={}", clusterUrl);
         List<Node> nodeList = openShiftClient.nodes().list().getItems();
         log.debug("nodeList={}", nodeList);
-        Stream<Tuple<Capacity, Capacity>> capacitiesAllocatable =
-                getOcpNodesToCapacityAndAllocatable(nodeList);
-        List<Nodes> nodesStream = mapCapacityAllocatableToNodes(capacitiesAllocatable, clusterUrl)
+        Stream<Tuple<Tuple<Capacity, Capacity>, String>> nodesInfo =
+                getOcpNodesInfo(nodeList);
+        List<Nodes> nodesStream = mapNodesInfo(nodesInfo, clusterUrl)
                 .collect(Collectors.toList());
         persist(nodesStream);
         return nodesStream;
     }
 
-    Stream<Nodes> mapCapacityAllocatableToNodes(Stream<Tuple<Capacity, Capacity>> capacityAndAllocatables,
+    Stream<Nodes> mapNodesInfo(Stream<Tuple<Tuple<Capacity, Capacity>, String>> nodesInfo,
                                                 String clusterUrl) {
-        return capacityAndAllocatables.map(
+        return nodesInfo.map(
                 tuple -> {
-                    Capacity capacity = tuple.getFirst();
-                    Capacity allocatable = tuple.getSecond();
-                    BigDecimal usedCpu = capacity.cpu.subtract(allocatable.cpu);
-                    BigDecimal usedMemory = capacity.memory.subtract(allocatable.memory);
-                    BigDecimal usedStorage = capacity.ephemeralStorage.subtract(allocatable.ephemeralStorage);
+                    Capacity capacity = tuple.getFirst().getFirst();
+                    Capacity allocatable = tuple.getFirst().getSecond();
+                    String nodeName = tuple.getSecond();
                     return Nodes.builder()
-                            .nodeName("")
+                            .nodeName(nodeName)
                             .cluster(clusterUrl)
-                            .CPU(usedCpu)
-                            .memory(usedMemory)
-                            .disk(usedStorage)
+                            .allocatableCPU(allocatable.cpu)
+                            .allocatableMemory(allocatable.memory)
+                            .allocatableDisk(allocatable.ephemeralStorage)
+                            .capacityCPU(capacity.cpu)
+                            .capacityMemory(capacity.memory)
+                            .capacityDisk(capacity.ephemeralStorage)
                             .build();
                 }
         );
 
     }
 
-    Stream<Tuple<Capacity, Capacity>> getOcpNodesToCapacityAndAllocatable(List<Node> ocpNodes) {
+    Stream<Tuple<Tuple<Capacity, Capacity>, String>> getOcpNodesInfo(List<Node> ocpNodes) {
         return ocpNodes.stream()
-                .map(Node::getStatus)
-                .map(nodeStatus -> {
+                .map(node -> new Tuple<>(node.getMetadata().getName(), node.getStatus()))
+                .map(nodeTuple -> {
+                    String nodeName = nodeTuple.getFirst();
+                    NodeStatus nodeStatus = nodeTuple.getSecond();
                     Map<String, Quantity> capacityMap = nodeStatus.getCapacity();
                     Map<String, Quantity> allocatableMap = nodeStatus.getAllocatable();
-                    return new Tuple<>(Capacity.fromMap(capacityMap),
-                            Capacity.fromMap(allocatableMap));
+                    return new Tuple<>(new Tuple<>(Capacity.fromMap(capacityMap),
+                            Capacity.fromMap(allocatableMap)), nodeName);
                 });
     }
 
 
     @Builder
     static class Capacity {
-        String nodeName;
         BigDecimal cpu;
         BigDecimal ephemeralStorage;
         BigDecimal memory;

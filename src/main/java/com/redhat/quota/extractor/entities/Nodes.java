@@ -16,7 +16,10 @@ import java.math.BigDecimal;
 public class Nodes extends ExtractorEntity {
     String cluster;
     String nodeName;
-    BigDecimal CPU;
-    BigDecimal memory;
-    BigDecimal disk;
+    BigDecimal allocatableCPU;
+    BigDecimal allocatableMemory;
+    BigDecimal allocatableDisk;
+    BigDecimal capacityCPU;
+    BigDecimal capacityMemory;
+    BigDecimal capacityDisk;
 }
