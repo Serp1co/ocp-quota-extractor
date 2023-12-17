@@ -15,6 +15,8 @@ import jakarta.enterprise.context.ApplicationScoped;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -78,7 +80,7 @@ public class ClusterResourceQuotasCollector extends ACollector implements IColle
                 .hardPods(hard.get("pods") != null ? hard.get("pods").getNumericalAmount() : null)
                 .hardSecrets(hard.get("secrets") != null ? hard.get("secrets").getNumericalAmount() : null)
                 .limitsCPU(hard.get("limits.cpu") != null ? hard.get("limits.cpu").getNumericalAmount() : null)
-                .requestMemory(hard.get("requests.memory") != null ? hard.get("requests.memory").getNumericalAmount() : null);
+                .requestMemory(hard.get("requests.memory") != null ? fromKibToMib(hard.get("requests.memory").getNumericalAmount()) : null);
         if(quotaSelector.getLabels() != null) {
             for(String selector_prefix : SELECTOR_PREFIX) {
                 builder.ambito(quotaSelector.getLabels().getMatchLabels().get(selector_prefix + "/ambito"))
@@ -93,11 +95,15 @@ public class ClusterResourceQuotasCollector extends ACollector implements IColle
     void addStatus(ClusterResourceQuotaStatus status, ClusterResourceQuotasBuilder builder) {
         Map<String, Quantity> used = status.getTotal().getUsed();
         builder.usedLimitCPU(used.get("limits.cpu") != null ? used.get("limits.cpu").getNumericalAmount() : null)
-                .usedLimitMemory(used.get("limits.memory") != null ? used.get("limits.memory").getNumericalAmount() : null)
+                .usedLimitMemory(used.get("limits.memory") != null ? fromKibToMib(used.get("limits.memory").getNumericalAmount()) : null)
                 .usedRequestCPU(used.get("requests.cpu") != null ? used.get("requests.cpu").getNumericalAmount() : null)
-                .usedRequestMemory(used.get("requests.memory") != null ? used.get("requests.memory").getNumericalAmount() : null)
+                .usedRequestMemory(used.get("requests.memory") != null ? fromKibToMib(used.get("requests.memory").getNumericalAmount()) : null)
                 .usedPods(used.get("pods") != null ? used.get("pods").getNumericalAmount() : null)
                 .usedSecrets(used.get("secrets") != null ? used.get("secrets").getNumericalAmount() : null);
+    }
+
+    BigDecimal fromKibToMib(BigDecimal value) {
+        return value.divide(BigDecimal.valueOf(1024), RoundingMode.DOWN);
     }
 
 }
