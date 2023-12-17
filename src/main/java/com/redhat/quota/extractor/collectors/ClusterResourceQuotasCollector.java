@@ -76,7 +76,9 @@ public class ClusterResourceQuotasCollector extends ACollector implements IColle
         ClusterResourceQuotasBuilder builder = ClusterResourceQuotas.builder()
                 .ClusterResourceQuotaName(quotaName)
                 .HardPods(hard.get("pods") != null ? hard.get("pods").getNumericalAmount() : null)
-                .HardSecrets(hard.get("secrets") != null ? hard.get("secrets").getNumericalAmount() : null);
+                .HardSecrets(hard.get("secrets") != null ? hard.get("secrets").getNumericalAmount() : null)
+                .LimitsCPU(hard.get("limits.cpu") != null ? hard.get("limits.cpu").getNumericalAmount() : null)
+                .RequestMemory(hard.get("requests.memory") != null ? hard.get("requests.memory").getNumericalAmount() : null);
         if(quotaSelector.getLabels() != null) {
             builder.Ambito(quotaSelector.getLabels().getMatchLabels().get(SELECTOR_PREFIX + "/ambito"))
                     .Application(quotaSelector.getLabels().getMatchLabels().get(SELECTOR_PREFIX + "/application"))
@@ -84,20 +86,16 @@ public class ClusterResourceQuotasCollector extends ACollector implements IColle
             ;
         }
         return builder;
-
     }
 
     void addStatus(ClusterResourceQuotaStatus status, ClusterResourceQuotasBuilder builder) {
         Map<String, Quantity> used = status.getTotal().getUsed();
-        builder.LimitsCPU(used.get("limits.cpu") != null ? used.get("limits.cpu").getNumericalAmount() : null);
-        builder.RequestMemory(used.get("requests.memory") != null ?
-                used.get("requests.memory").getNumericalAmount() : null);
-        builder.UsedLimitCPU(used.get("limits.cpu") != null ? used.get("limits.cpu").getNumericalAmount() : null);
-        builder.UsedLimitMemory(used.get("limits.memory") != null ? used.get("limits.memory").getNumericalAmount() : null);
-        builder.UsedRequestCPU(used.get("requests.cpu") != null ? used.get("requests.cpu").getNumericalAmount() : null);
-        builder.UsedRequestMemory(used.get("requests.memory") != null ? used.get("requests.memory").getNumericalAmount() : null);
-        builder.UsedPods(used.get("pods") != null ? used.get("pods").getNumericalAmount() : null);
-        builder.UsedSecrets(used.get("secrets") != null ? used.get("secrets").getNumericalAmount() : null);
+        builder.UsedLimitCPU(used.get("limits.cpu") != null ? used.get("limits.cpu").getNumericalAmount() : null)
+                .UsedLimitMemory(used.get("limits.memory") != null ? used.get("limits.memory").getNumericalAmount() : null)
+                .UsedRequestCPU(used.get("requests.cpu") != null ? used.get("requests.cpu").getNumericalAmount() : null)
+                .UsedRequestMemory(used.get("requests.memory") != null ? used.get("requests.memory").getNumericalAmount() : null)
+                .UsedPods(used.get("pods") != null ? used.get("pods").getNumericalAmount() : null)
+                .UsedSecrets(used.get("secrets") != null ? used.get("secrets").getNumericalAmount() : null);
     }
 
 }

@@ -4,8 +4,6 @@ import com.redhat.quota.extractor.entities.commons.ExtractorEntity;
 import jakarta.persistence.Entity;
 import lombok.*;
 
-import java.math.BigDecimal;
-
 @Entity
 @Getter
 @Setter
