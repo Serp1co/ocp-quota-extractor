@@ -24,7 +24,6 @@ public class NodesCollector extends ACollector implements ICollector<Nodes> {
         String clusterUrl = openShiftClient.getMasterUrl().toString();
         log.info("Collecting Nodes for cluster={}", clusterUrl);
         List<Node> nodeList = openShiftClient.nodes().list().getItems();
-        log.debug("nodeList={}", nodeList);
         Stream<Tuple<Tuple<Capacity, Capacity>, String>> nodesInfo =
                 getOcpNodesInfo(nodeList);
         List<Nodes> nodesStream = mapNodesInfo(nodesInfo, clusterUrl)

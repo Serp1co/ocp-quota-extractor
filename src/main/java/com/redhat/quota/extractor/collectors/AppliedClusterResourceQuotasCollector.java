@@ -15,13 +15,14 @@ public class AppliedClusterResourceQuotasCollector extends ACollector implements
 
     @Override
     public List<AppliedClusterResourceQuotas> collect(OpenShiftClient openShiftClient, String[] namespaces) {
-        log.info("collecting AppliedClusterResourceQuotasCollector for cluster {}", openShiftClient.getMasterUrl());
+        String masterUrl = openShiftClient.getMasterUrl().toString();
+        log.info("collecting AppliedClusterResourceQuotasCollector for cluster {}", masterUrl);
         List<AppliedClusterResourceQuotas> appliedClusterResourceQuotasList = Arrays.stream(namespaces)
                 .flatMap(ns -> openShiftClient.quotas()
                         .appliedClusterResourceQuotas()
                         .inNamespace(ns).list().getItems().stream()
                         .map(clusterResourceQuota ->
-                                new AppliedClusterResourceQuotas(clusterResourceQuota.getMetadata().getName(), ns)
+                                new AppliedClusterResourceQuotas(clusterResourceQuota.getMetadata().getName(), ns, masterUrl)
                         )).collect(Collectors.toList());
         persist(appliedClusterResourceQuotasList);
         return appliedClusterResourceQuotasList;

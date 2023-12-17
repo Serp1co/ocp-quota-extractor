@@ -1,8 +1,10 @@
-package com.redhat.quota.extractor.entities;
+package com.redhat.quota.extractor.entities.crq;
 
 import com.redhat.quota.extractor.entities.commons.ExtractorEntity;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.io.Serializable;
 
 @Entity
 @Getter
@@ -11,12 +13,13 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Annotations extends ExtractorEntity {
-    String Namespace;
+public class Labels extends ExtractorEntity {
     @Column(columnDefinition="text")
-    String AnnotationName;
+    String labelName;
     @Column(columnDefinition="text")
-    String AnnotationValue;
+    String labelValue;
+
     @ManyToOne
     ClusterResourceQuotas clusterResourceQuotas;
+
 }

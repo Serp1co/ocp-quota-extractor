@@ -17,7 +17,6 @@ public class NamespacesCollector extends ACollector implements ICollector<Namesp
 
     @Override
     public List<Namespaces> collect(OpenShiftClient openShiftClient, String... namespaces) {
-        log.info("collecting Namespaces for cluster {}", openShiftClient.getMasterUrl());
         List<Namespaces> namespacesStream = getOcpNamespacesToNamespace(openShiftClient)
                 .collect(Collectors.toList());
         persist(namespacesStream);
@@ -26,6 +25,7 @@ public class NamespacesCollector extends ACollector implements ICollector<Namesp
 
     Stream<Namespaces> getOcpNamespacesToNamespace(OpenShiftClient ocpClient) {
         String masterUrl = ocpClient.getMasterUrl().toString();
+        log.info("collecting Namespaces for cluster {}", masterUrl);
         return ocpClient.namespaces().list().getItems().stream()
                 .map(Namespace::getMetadata)
                 .map(ObjectMeta::getName)

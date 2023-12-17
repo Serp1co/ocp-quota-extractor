@@ -1,9 +1,9 @@
 package com.redhat.quota.extractor.collectors;
 
-import com.redhat.quota.extractor.entities.Annotations;
-import com.redhat.quota.extractor.entities.ClusterResourceQuotas;
-import com.redhat.quota.extractor.entities.ClusterResourceQuotas.ClusterResourceQuotasBuilder;
-import com.redhat.quota.extractor.entities.Labels;
+import com.redhat.quota.extractor.entities.crq.Annotations;
+import com.redhat.quota.extractor.entities.crq.ClusterResourceQuotas;
+import com.redhat.quota.extractor.entities.crq.ClusterResourceQuotas.ClusterResourceQuotasBuilder;
+import com.redhat.quota.extractor.entities.crq.Labels;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.openshift.api.model.ClusterResourceQuota;
@@ -26,13 +26,11 @@ import java.util.stream.Stream;
 @Slf4j
 public class ClusterResourceQuotasCollector extends ACollector implements ICollector<ClusterResourceQuotas> {
 
-
-    @ConfigProperty(name = "extractor.selector-prefix")
-    String SELECTOR_PREFIX;
+    @ConfigProperty(name = "extractor.crq-selector-prefixes")
+    String[] SELECTOR_PREFIX;
 
     @Override
     public List<ClusterResourceQuotas> collect(OpenShiftClient openShiftClient, String... namespaces) {
-        log.info("collecting ClusterResourceQuotas for cluster {}", openShiftClient.getMasterUrl());
         List<ClusterResourceQuotas> clusterResourceQuotasStream =
                 getClusterResourceQuotaStream(openShiftClient).collect(Collectors.toList());
         persist(clusterResourceQuotasStream);
@@ -40,24 +38,26 @@ public class ClusterResourceQuotasCollector extends ACollector implements IColle
     }
 
     Stream<ClusterResourceQuotas> getClusterResourceQuotaStream(OpenShiftClient ocpClient) {
+        String masterUrl = ocpClient.getMasterUrl().toString();
+        log.info("collecting ClusterResourceQuotas for cluster {}", masterUrl);
         List<ClusterResourceQuota> clusterResourceQuotaList =
                 ocpClient.quotas().clusterResourceQuotas().list().getItems();
         return clusterResourceQuotaList.stream().parallel()
-                .map(clusterResourceQuota -> getNameAndSpec(ocpClient.getMasterUrl().toString(), clusterResourceQuota))
+                .map(clusterResourceQuota -> getNameAndSpec(masterUrl, clusterResourceQuota))
                 .map(this::getQuotaFromStatus);
     }
 
     Tuple<ClusterResourceQuotasBuilder, Optional<ClusterResourceQuotaStatus>> getNameAndSpec(String clusterUrl, ClusterResourceQuota clusterResourceQuota) {
         ObjectMeta metadata = clusterResourceQuota.getMetadata();
         List<Labels> labels = new ArrayList<>() {{
-            metadata.getLabels().forEach((k,v) -> this.add(Labels.builder().LabelName(k).LabelValue(v).build()));
+            metadata.getLabels().forEach((k,v) -> this.add(Labels.builder().labelName(k).labelValue(v).build()));
         }};
         List<Annotations> annotations = new ArrayList<>() {{
             metadata.getAnnotations().forEach((k,v) ->
-                    this.add(Annotations.builder().AnnotationName(k).AnnotationValue(v).build()));
+                    this.add(Annotations.builder().annotationName(k).annotationValue(v).build()));
         }};
         ClusterResourceQuotasBuilder builder = fromSpec(metadata.getName(), clusterResourceQuota.getSpec())
-                .Cluster(clusterUrl)
+                .cluster(clusterUrl)
                 .labels(labels)
                 .annotations(annotations);
         return new Tuple<>(builder, Optional.ofNullable(clusterResourceQuota.getStatus()));
@@ -74,28 +74,30 @@ public class ClusterResourceQuotasCollector extends ACollector implements IColle
         Map<String, Quantity> hard = spec.getQuota().getHard();
         ClusterResourceQuotaSelector quotaSelector = spec.getSelector();
         ClusterResourceQuotasBuilder builder = ClusterResourceQuotas.builder()
-                .ClusterResourceQuotaName(quotaName)
-                .HardPods(hard.get("pods") != null ? hard.get("pods").getNumericalAmount() : null)
-                .HardSecrets(hard.get("secrets") != null ? hard.get("secrets").getNumericalAmount() : null)
-                .LimitsCPU(hard.get("limits.cpu") != null ? hard.get("limits.cpu").getNumericalAmount() : null)
-                .RequestMemory(hard.get("requests.memory") != null ? hard.get("requests.memory").getNumericalAmount() : null);
+                .clusterResourceQuotaName(quotaName)
+                .hardPods(hard.get("pods") != null ? hard.get("pods").getNumericalAmount() : null)
+                .hardSecrets(hard.get("secrets") != null ? hard.get("secrets").getNumericalAmount() : null)
+                .limitsCPU(hard.get("limits.cpu") != null ? hard.get("limits.cpu").getNumericalAmount() : null)
+                .requestMemory(hard.get("requests.memory") != null ? hard.get("requests.memory").getNumericalAmount() : null);
         if(quotaSelector.getLabels() != null) {
-            builder.Ambito(quotaSelector.getLabels().getMatchLabels().get(SELECTOR_PREFIX + "/ambito"))
-                    .Application(quotaSelector.getLabels().getMatchLabels().get(SELECTOR_PREFIX + "/application"))
-                    .ServiceModel(quotaSelector.getLabels().getMatchLabels().get(SELECTOR_PREFIX + "/servicemodel"))
-            ;
+            for(String selector_prefix : SELECTOR_PREFIX) {
+                builder.ambito(quotaSelector.getLabels().getMatchLabels().get(selector_prefix + "/ambito"))
+                        .application(quotaSelector.getLabels().getMatchLabels().get(selector_prefix + "/application"))
+                        .serviceModel(quotaSelector.getLabels().getMatchLabels().get(selector_prefix + "/servicemodel"))
+                ;
+            }
         }
         return builder;
     }
 
     void addStatus(ClusterResourceQuotaStatus status, ClusterResourceQuotasBuilder builder) {
         Map<String, Quantity> used = status.getTotal().getUsed();
-        builder.UsedLimitCPU(used.get("limits.cpu") != null ? used.get("limits.cpu").getNumericalAmount() : null)
-                .UsedLimitMemory(used.get("limits.memory") != null ? used.get("limits.memory").getNumericalAmount() : null)
-                .UsedRequestCPU(used.get("requests.cpu") != null ? used.get("requests.cpu").getNumericalAmount() : null)
-                .UsedRequestMemory(used.get("requests.memory") != null ? used.get("requests.memory").getNumericalAmount() : null)
-                .UsedPods(used.get("pods") != null ? used.get("pods").getNumericalAmount() : null)
-                .UsedSecrets(used.get("secrets") != null ? used.get("secrets").getNumericalAmount() : null);
+        builder.usedLimitCPU(used.get("limits.cpu") != null ? used.get("limits.cpu").getNumericalAmount() : null)
+                .usedLimitMemory(used.get("limits.memory") != null ? used.get("limits.memory").getNumericalAmount() : null)
+                .usedRequestCPU(used.get("requests.cpu") != null ? used.get("requests.cpu").getNumericalAmount() : null)
+                .usedRequestMemory(used.get("requests.memory") != null ? used.get("requests.memory").getNumericalAmount() : null)
+                .usedPods(used.get("pods") != null ? used.get("pods").getNumericalAmount() : null)
+                .usedSecrets(used.get("secrets") != null ? used.get("secrets").getNumericalAmount() : null);
     }
 
 }
