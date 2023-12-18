@@ -80,8 +80,8 @@ public class OcpBasicAuthLoginService {
         OcpDiscoveryAuthClient ocpAuthClient = buildDiscoveryClient(apiUrl);
         String response = ocpAuthClient.wellKnown();
         try {
-            Map<String, String> map = objectMapper.readValue(response, Map.class);
-            String authUrl = map.get("authorization_endpoint");
+            Map<?,?> map = objectMapper.readValue(response, Map.class);
+            String authUrl = (String) map.get("authorization_endpoint");
             return getToken(authUrl, client_id, username, psw);
         } catch (JsonProcessingException e) {
             log.error("Error parsing discovery response");
