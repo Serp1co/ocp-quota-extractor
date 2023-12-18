@@ -6,14 +6,11 @@ import com.redhat.quota.extractor.entities.crq.Labels;
 import io.quarkus.scheduler.Scheduled;
 import io.smallrye.common.annotation.Blocking;
 import io.smallrye.mutiny.Multi;
-import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.infrastructure.Infrastructure;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
-
-import java.util.UUID;
 
 @ApplicationScoped
 @Slf4j
@@ -43,6 +40,7 @@ public class JobRunnerService {
         ;
     }
 
+    @Blocking
     @Transactional
     void prepareForJob() {
         log.info("Clearing up database");
@@ -51,5 +49,6 @@ public class JobRunnerService {
         ExtractorEntity.deleteAll();
         log.info("Database clear");
     }
+
 }
 

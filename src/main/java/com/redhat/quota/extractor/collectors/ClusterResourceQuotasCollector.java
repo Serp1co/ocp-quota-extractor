@@ -4,6 +4,7 @@ import com.redhat.quota.extractor.entities.crq.Annotations;
 import com.redhat.quota.extractor.entities.crq.ClusterResourceQuotas;
 import com.redhat.quota.extractor.entities.crq.ClusterResourceQuotas.ClusterResourceQuotasBuilder;
 import com.redhat.quota.extractor.entities.crq.Labels;
+import com.redhat.quota.extractor.utils.CollectorsUtils;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.openshift.api.model.ClusterResourceQuota;
@@ -77,15 +78,16 @@ public class ClusterResourceQuotasCollector extends ACollector implements IColle
         ClusterResourceQuotaSelector quotaSelector = spec.getSelector();
         ClusterResourceQuotasBuilder builder = ClusterResourceQuotas.builder()
                 .clusterResourceQuotaName(quotaName)
-                .hardPods(hard.get("pods") != null ? hard.get("pods").getNumericalAmount() : null)
-                .hardSecrets(hard.get("secrets") != null ? hard.get("secrets").getNumericalAmount() : null)
-                .limitsCPU(hard.get("limits.cpu") != null ? hard.get("limits.cpu").getNumericalAmount() : null)
-                .requestMemory(hard.get("requests.memory") != null ? fromKibToMib(hard.get("requests.memory").getNumericalAmount()) : null);
+                .hardPods(CollectorsUtils.getNumericalAmountOrNull(hard, "pods"))
+                .hardSecrets(CollectorsUtils.getNumericalAmountOrNull(hard, "secrets"))
+                .limitsCPU(CollectorsUtils.getNumericalAmountOrNull(hard, "limits.cpu"))
+                .requestMemory(CollectorsUtils.getNumericalAmountOrNull(hard, "request.memory",
+                        CollectorsUtils::fromKibToMib));
         if(quotaSelector.getLabels() != null) {
             for(String selector_prefix : SELECTOR_PREFIX) {
-                builder.ambito(quotaSelector.getLabels().getMatchLabels().get(selector_prefix + "/ambito"))
-                        .application(quotaSelector.getLabels().getMatchLabels().get(selector_prefix + "/application"))
-                        .serviceModel(quotaSelector.getLabels().getMatchLabels().get(selector_prefix + "/servicemodel"))
+                builder.ambito(quotaSelector.getLabels().getMatchLabels().get(selector_prefix))
+                        .application(quotaSelector.getLabels().getMatchLabels().get(selector_prefix))
+                        .serviceModel(quotaSelector.getLabels().getMatchLabels().get(selector_prefix))
                 ;
             }
         }
@@ -94,16 +96,15 @@ public class ClusterResourceQuotasCollector extends ACollector implements IColle
 
     void addStatus(ClusterResourceQuotaStatus status, ClusterResourceQuotasBuilder builder) {
         Map<String, Quantity> used = status.getTotal().getUsed();
-        builder.usedLimitCPU(used.get("limits.cpu") != null ? used.get("limits.cpu").getNumericalAmount() : null)
-                .usedLimitMemory(used.get("limits.memory") != null ? fromKibToMib(used.get("limits.memory").getNumericalAmount()) : null)
-                .usedRequestCPU(used.get("requests.cpu") != null ? used.get("requests.cpu").getNumericalAmount() : null)
-                .usedRequestMemory(used.get("requests.memory") != null ? fromKibToMib(used.get("requests.memory").getNumericalAmount()) : null)
-                .usedPods(used.get("pods") != null ? used.get("pods").getNumericalAmount() : null)
-                .usedSecrets(used.get("secrets") != null ? used.get("secrets").getNumericalAmount() : null);
+        builder.usedLimitCPU(CollectorsUtils.getNumericalAmountOrNull(used, "limits.cpu"))
+                .usedLimitMemory(CollectorsUtils.getNumericalAmountOrNull(used, "limits.memory",
+                        CollectorsUtils::fromKibToMib))
+                .usedRequestCPU(CollectorsUtils.getNumericalAmountOrNull(used, "request.memory"))
+                .usedRequestMemory(CollectorsUtils.getNumericalAmountOrNull(used, "request.memory",
+                        CollectorsUtils::fromKibToMib))
+                .usedPods(CollectorsUtils.getNumericalAmountOrNull(used, "pods"))
+                .usedSecrets(CollectorsUtils.getNumericalAmountOrNull(used, "secrets"));
     }
 
-    BigDecimal fromKibToMib(BigDecimal value) {
-        return value.divide(BigDecimal.valueOf(1024), RoundingMode.DOWN);
-    }
 
 }

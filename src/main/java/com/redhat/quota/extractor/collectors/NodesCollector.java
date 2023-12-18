@@ -1,6 +1,7 @@
 package com.redhat.quota.extractor.collectors;
 
 import com.redhat.quota.extractor.entities.Nodes;
+import com.redhat.quota.extractor.utils.CollectorsUtils;
 import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.NodeStatus;
 import io.fabric8.kubernetes.api.model.Quantity;
@@ -77,12 +78,13 @@ public class NodesCollector extends ACollector implements ICollector<Nodes> {
 
         static Capacity fromMap(Map<String, Quantity> map) {
             return Capacity.builder()
-                    .cpu(map.get("cpu").getNumericalAmount())
-                    .pods(map.get("pods").getNumericalAmount())
-                    .ephemeralStorage(map.get("ephemeral-storage").getNumericalAmount())
-                    .memory(map.get("memory").getNumericalAmount())
+                    .cpu(CollectorsUtils.getNumericalAmountOrNull(map, "cpu"))
+                    .pods(CollectorsUtils.getNumericalAmountOrNull(map, "pods"))
+                    .ephemeralStorage(CollectorsUtils.getNumericalAmountOrNull(map, "ephemeral-storage",
+                            CollectorsUtils::fromKibToMib))
+                    .memory(CollectorsUtils.getNumericalAmountOrNull(map, "memory",
+                            CollectorsUtils::fromKibToMib))
                     .build();
         }
     }
-
 }

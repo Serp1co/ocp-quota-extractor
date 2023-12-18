@@ -16,6 +16,7 @@ public class Annotations extends ExtractorEntity {
     String annotationName;
     @Column(columnDefinition="text")
     String annotationValue;
+
     @ManyToOne
     ClusterResourceQuotas clusterResourceQuotas;
 }

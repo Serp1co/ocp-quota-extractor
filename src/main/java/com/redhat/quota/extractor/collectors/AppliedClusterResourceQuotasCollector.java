@@ -22,7 +22,7 @@ public class AppliedClusterResourceQuotasCollector extends ACollector implements
                         .appliedClusterResourceQuotas()
                         .inNamespace(ns).list().getItems().stream()
                         .map(clusterResourceQuota ->
-                                new AppliedClusterResourceQuotas(clusterResourceQuota.getMetadata().getName(), ns, masterUrl)
+                                new AppliedClusterResourceQuotas(clusterResourceQuota.getMetadata().getName(), ns)
                         )).collect(Collectors.toList());
         persist(appliedClusterResourceQuotasList);
         return appliedClusterResourceQuotasList;

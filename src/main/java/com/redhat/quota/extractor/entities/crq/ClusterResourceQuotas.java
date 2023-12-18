@@ -14,10 +14,6 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(uniqueConstraints =
-    @UniqueConstraint(columnNames = {"cluster", "clusterResourceQuotaName"})
-)
-
 public class ClusterResourceQuotas extends ExtractorEntity {
     String cluster;
     String clusterResourceQuotaName;
