@@ -3,8 +3,7 @@ package com.redhat.quota.extractor.services;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.quota.extractor.exceptions.BasicAuthLoginException;
-import com.redhat.quota.extractor.exceptions.BasicAuthLoginException.AuthTokenNotReceivedException;
-import com.redhat.quota.extractor.exceptions.BasicAuthLoginException.AuthTokenParseException;
+import com.redhat.quota.extractor.exceptions.BasicAuthLoginException.*;
 import com.redhat.quota.extractor.exceptions.LoginException;
 import io.quarkus.rest.client.reactive.ClientRedirectHandler;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -85,7 +84,7 @@ public class OcpBasicAuthLoginService {
             return getToken(authUrl, client_id, username, psw);
         } catch (JsonProcessingException e) {
             log.error("Error parsing discovery response");
-            throw new RuntimeException(e);
+            throw new AuthDiscoveryEndpointException();
         }
     }
 

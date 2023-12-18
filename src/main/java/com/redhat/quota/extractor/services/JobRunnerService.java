@@ -1,12 +1,19 @@
 package com.redhat.quota.extractor.services;
 
 import com.redhat.quota.extractor.entities.commons.ExtractorEntity;
+import com.redhat.quota.extractor.entities.crq.Annotations;
+import com.redhat.quota.extractor.entities.crq.Labels;
 import io.quarkus.scheduler.Scheduled;
 import io.smallrye.common.annotation.Blocking;
+import io.smallrye.mutiny.Multi;
+import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.infrastructure.Infrastructure;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.UUID;
 
 @ApplicationScoped
 @Slf4j
@@ -14,6 +21,9 @@ public class JobRunnerService {
 
     @Inject
     OcpExtractorService ocpExtractorService;
+
+    @Inject
+    ClientConfigService clientConfigService;
 
     @Scheduled(cron = "${extractor.job.schedule.time: 0 0 23 * * ?}")
     void schedule() {
@@ -25,7 +35,12 @@ public class JobRunnerService {
     public void doJob() {
         log.info("full collection job start");
         prepareForJob();
-        ocpExtractorService.executeExtraction();
+        Multi.createFrom()
+                .items(clientConfigService.getConfigsForClusters())
+                .emitOn(Infrastructure.getDefaultWorkerPool())
+                .subscribe()
+                .with(ocpExtractorService::executeExtraction, Throwable::printStackTrace)
+        ;
         log.info("full collection job end");
     }
 
@@ -33,6 +48,8 @@ public class JobRunnerService {
     @Transactional
     void prepareForJob() {
         log.info("Clearing up database");
+        Annotations.deleteAll();
+        Labels.deleteAll();
         ExtractorEntity.deleteAll();
         log.info("Database clear");
     }

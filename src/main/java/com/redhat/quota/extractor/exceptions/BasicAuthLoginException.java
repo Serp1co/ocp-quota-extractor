@@ -38,4 +38,13 @@ public class BasicAuthLoginException extends LoginException {
 
     }
 
+    public static class AuthDiscoveryEndpointException extends LoginException {
+        final static String MESSAGE = "Error parsing discovery response";
+
+        public AuthDiscoveryEndpointException() {
+            super(MESSAGE);
+        }
+
+    }
+
 }
