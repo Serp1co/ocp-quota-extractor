@@ -5,6 +5,7 @@ import com.redhat.quota.extractor.entities.Namespaces;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;
+import io.smallrye.common.annotation.Blocking;
 import io.smallrye.common.annotation.NonBlocking;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.RequestScoped;
@@ -26,6 +27,7 @@ public class OcpExtractorService {
     @Inject
     AppliedClusterResourceQuotasCollector appliedClusterResourceQuotasCollector;
 
+    @Blocking
     public void executeExtraction(Config config) {
         try (OpenShiftClient client = new KubernetesClientBuilder()
                 .withConfig(config)

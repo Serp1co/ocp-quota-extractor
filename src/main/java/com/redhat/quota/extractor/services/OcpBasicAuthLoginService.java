@@ -77,8 +77,8 @@ public class OcpBasicAuthLoginService {
      */
     public String login(String apiUrl, String client_id, String username, String psw) {
         OcpDiscoveryAuthClient ocpAuthClient = buildDiscoveryClient(apiUrl);
-        String response = ocpAuthClient.wellKnown();
         try {
+            String response = ocpAuthClient.wellKnown();
             Map<?,?> map = objectMapper.readValue(response, Map.class);
             String authUrl = (String) map.get("authorization_endpoint");
             return getToken(authUrl, client_id, username, psw);

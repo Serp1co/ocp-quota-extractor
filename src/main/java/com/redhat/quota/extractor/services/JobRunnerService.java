@@ -28,23 +28,21 @@ public class JobRunnerService {
     @Scheduled(cron = "${extractor.job.schedule.time: 0 0 23 * * ?}")
     void schedule() {
         log.info("quota extractor wakeup");
+        prepareForJob();
         doJob();
         log.info("quota extractor sleep");
     }
 
     public void doJob() {
         log.info("full collection job start");
-        prepareForJob();
         Multi.createFrom()
                 .items(clientConfigService.getConfigsForClusters())
                 .emitOn(Infrastructure.getDefaultWorkerPool())
                 .subscribe()
                 .with(ocpExtractorService::executeExtraction, Throwable::printStackTrace)
         ;
-        log.info("full collection job end");
     }
 
-    @Blocking
     @Transactional
     void prepareForJob() {
         log.info("Clearing up database");
