@@ -57,7 +57,8 @@ public class ClusterResourceQuotasCollector extends ACollector implements IColle
             metadata.getAnnotations().forEach((k,v) ->
                     this.add(Annotations.builder().annotationName(k).annotationValue(v).build()));
         }};
-        ClusterResourceQuotasBuilder builder = fromSpec(metadata.getName(), clusterResourceQuota.getSpec())
+        ClusterResourceQuotasBuilder builder = fromSpec(clusterResourceQuota.getSpec())
+                .clusterResourceQuotaName(metadata.getName())
                 .cluster(clusterUrl)
                 .labels(labels)
                 .annotations(annotations)
@@ -75,11 +76,10 @@ public class ClusterResourceQuotasCollector extends ACollector implements IColle
         return builder.build();
     }
 
-    ClusterResourceQuotasBuilder fromSpec(String quotaName, ClusterResourceQuotaSpec spec) {
+    ClusterResourceQuotasBuilder fromSpec(ClusterResourceQuotaSpec spec) {
         Map<String, Quantity> hard = spec.getQuota().getHard();
         ClusterResourceQuotaSelector quotaSelector = spec.getSelector();
         ClusterResourceQuotasBuilder builder = ClusterResourceQuotas.builder()
-                .clusterResourceQuotaName(quotaName)
                 .hardPods(CollectorsUtils.getNumericalAmountOrNull(hard, "pods"))
                 .hardSecrets(CollectorsUtils.getNumericalAmountOrNull(hard, "secrets"))
                 .limitsCPU(CollectorsUtils.getNumericalAmountOrNull(hard, "limits.cpu"))
