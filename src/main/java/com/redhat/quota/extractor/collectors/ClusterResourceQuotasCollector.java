@@ -82,7 +82,7 @@ public class ClusterResourceQuotasCollector extends ACollector implements IColle
                 .hardPods(CollectorsUtils.getNumericalAmountOrNull(hard, "pods"))
                 .hardSecrets(CollectorsUtils.getNumericalAmountOrNull(hard, "secrets"))
                 .limitsCPU(CollectorsUtils.getNumericalAmountOrNull(hard, "limits.cpu"))
-                .requestMemory(CollectorsUtils.getNumericalAmountOrNull(hard, "request.memory",
+                .requestMemory(CollectorsUtils.getNumericalAmountOrNull(hard, "requests.memory",
                         CollectorsUtils::fromKibToMib));
         if(quotaSelector.getLabels() != null) {
             builder.ambito(quotaSelector.getLabels().getMatchLabels().get(SELECTOR_PREFIX + "/ambito"))
@@ -98,8 +98,8 @@ public class ClusterResourceQuotasCollector extends ACollector implements IColle
         builder.usedLimitCPU(CollectorsUtils.getNumericalAmountOrNull(used, "limits.cpu"))
                 .usedLimitMemory(CollectorsUtils.getNumericalAmountOrNull(used, "limits.memory",
                         CollectorsUtils::fromKibToMib))
-                .usedRequestCPU(CollectorsUtils.getNumericalAmountOrNull(used, "request.cpu"))
-                .usedRequestMemory(CollectorsUtils.getNumericalAmountOrNull(used, "request.memory",
+                .usedRequestCPU(CollectorsUtils.getNumericalAmountOrNull(used, "requests.cpu"))
+                .usedRequestMemory(CollectorsUtils.getNumericalAmountOrNull(used, "requests.memory",
                         CollectorsUtils::fromKibToMib))
                 .usedPods(CollectorsUtils.getNumericalAmountOrNull(used, "pods"))
                 .usedSecrets(CollectorsUtils.getNumericalAmountOrNull(used, "secrets"));
