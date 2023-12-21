@@ -16,12 +16,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -30,7 +25,7 @@ import java.util.stream.Stream;
 public class ClusterResourceQuotasCollector extends ACollector implements ICollector<ClusterResourceQuotas> {
 
     @ConfigProperty(name = "extractor.crq-selector-prefixes")
-    String[] SELECTOR_PREFIX;
+    String SELECTOR_PREFIX;
 
     @Override
     public List<ClusterResourceQuotas> collect(OpenShiftClient openShiftClient, String... namespaces) {
@@ -84,12 +79,10 @@ public class ClusterResourceQuotasCollector extends ACollector implements IColle
                 .requestMemory(CollectorsUtils.getNumericalAmountOrNull(hard, "request.memory",
                         CollectorsUtils::fromKibToMib));
         if(quotaSelector.getLabels() != null) {
-            for(String selector_prefix : SELECTOR_PREFIX) {
-                builder.ambito(quotaSelector.getLabels().getMatchLabels().get(selector_prefix))
-                        .application(quotaSelector.getLabels().getMatchLabels().get(selector_prefix))
-                        .serviceModel(quotaSelector.getLabels().getMatchLabels().get(selector_prefix))
-                ;
-            }
+            builder.ambito(quotaSelector.getLabels().getMatchLabels().get(SELECTOR_PREFIX + "/ambito"))
+                    .application(quotaSelector.getLabels().getMatchLabels().get(SELECTOR_PREFIX + "/application"))
+                    .serviceModel(quotaSelector.getLabels().getMatchLabels().get(SELECTOR_PREFIX + "/servicemodel"))
+            ;
         }
         return builder;
     }
