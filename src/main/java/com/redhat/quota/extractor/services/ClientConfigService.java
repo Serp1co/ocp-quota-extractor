@@ -38,7 +38,7 @@ public class ClientConfigService {
                                 )
                         );
                 configs.add(
-                        extractorClientConfig.ssl().orElse(true) ?
+                        extractorClientConfig.ssl() ?
                                 cf.build() : cf.withTrustCerts(true).withDisableHostnameVerification(true).build()
                 );
             } catch (Exception e) {
@@ -54,7 +54,7 @@ public class ClientConfigService {
         String clientId();
         String username();
         String password();
-        Optional<Boolean> ssl();
+        boolean ssl();
     }
 
 }

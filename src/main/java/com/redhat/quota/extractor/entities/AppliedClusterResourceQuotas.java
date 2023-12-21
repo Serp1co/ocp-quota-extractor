@@ -16,4 +16,5 @@ import lombok.*;
 public class AppliedClusterResourceQuotas extends ExtractorEntity {
     String namespace;
     String clusterResourceQuotaName;
+    String cluster;
 }

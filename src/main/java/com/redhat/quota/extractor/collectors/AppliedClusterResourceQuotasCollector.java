@@ -23,14 +23,14 @@ public class AppliedClusterResourceQuotasCollector
                 .flatMap(ns -> openShiftClient.quotas()
                         .appliedClusterResourceQuotas()
                         .inNamespace(ns).list().getItems().stream()
-                        .map(clusterResourceQuota ->
-                                new AppliedClusterResourceQuotas(ns, clusterResourceQuota.getMetadata().getName())
-                        )).collect(Collectors.toList());
+                        .map(clusterResourceQuota -> AppliedClusterResourceQuotas.builder()
+                                .clusterResourceQuotaName(clusterResourceQuota.getMetadata().getName())
+                                .cluster(masterUrl)
+                                .namespace(ns)
+                                .build()))
+                .collect(Collectors.toList());
         persist(appliedClusterResourceQuotasList);
         return appliedClusterResourceQuotasList;
     }
 
 }
-
-
-
