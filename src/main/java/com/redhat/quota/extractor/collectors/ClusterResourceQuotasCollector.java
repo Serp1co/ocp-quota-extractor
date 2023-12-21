@@ -92,7 +92,7 @@ public class ClusterResourceQuotasCollector extends ACollector implements IColle
         builder.usedLimitCPU(CollectorsUtils.getNumericalAmountOrNull(used, "limits.cpu"))
                 .usedLimitMemory(CollectorsUtils.getNumericalAmountOrNull(used, "limits.memory",
                         CollectorsUtils::fromKibToMib))
-                .usedRequestCPU(CollectorsUtils.getNumericalAmountOrNull(used, "request.memory"))
+                .usedRequestCPU(CollectorsUtils.getNumericalAmountOrNull(used, "request.cpu"))
                 .usedRequestMemory(CollectorsUtils.getNumericalAmountOrNull(used, "request.memory",
                         CollectorsUtils::fromKibToMib))
                 .usedPods(CollectorsUtils.getNumericalAmountOrNull(used, "pods"))
