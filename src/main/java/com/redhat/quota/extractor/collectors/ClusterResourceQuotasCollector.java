@@ -45,7 +45,10 @@ public class ClusterResourceQuotasCollector extends ACollector implements IColle
                 .map(this::getQuotaFromStatus);
     }
 
-    Tuple<ClusterResourceQuotasBuilder, Optional<ClusterResourceQuotaStatus>> getNameAndSpec(String clusterUrl, ClusterResourceQuota clusterResourceQuota) {
+    Tuple<ClusterResourceQuotasBuilder, Optional<ClusterResourceQuotaStatus>> getNameAndSpec(
+            String clusterUrl,
+            ClusterResourceQuota clusterResourceQuota
+    ) {
         ObjectMeta metadata = clusterResourceQuota.getMetadata();
         List<Labels> labels = new ArrayList<>() {{
             metadata.getLabels().forEach((k,v) -> this.add(Labels.builder().labelName(k).labelValue(v).build()));
@@ -61,7 +64,10 @@ public class ClusterResourceQuotasCollector extends ACollector implements IColle
         return new Tuple<>(builder, Optional.ofNullable(clusterResourceQuota.getStatus()));
     }
 
-    ClusterResourceQuotas getQuotaFromStatus(Tuple<ClusterResourceQuotasBuilder, Optional<ClusterResourceQuotaStatus>> tuple) {
+    ClusterResourceQuotas getQuotaFromStatus(
+            Tuple<ClusterResourceQuotasBuilder,
+            Optional<ClusterResourceQuotaStatus>> tuple
+    ) {
         ClusterResourceQuotasBuilder builder = tuple.getFirst();
         Optional<ClusterResourceQuotaStatus> optionalStatus = tuple.getSecond();
         optionalStatus.ifPresent(status -> addStatus(status, builder));

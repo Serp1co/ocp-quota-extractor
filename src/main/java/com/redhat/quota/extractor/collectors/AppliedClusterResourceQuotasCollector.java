@@ -11,7 +11,9 @@ import java.util.stream.Collectors;
 
 @ApplicationScoped
 @Slf4j
-public class AppliedClusterResourceQuotasCollector extends ACollector implements ICollector<AppliedClusterResourceQuotas> {
+public class AppliedClusterResourceQuotasCollector
+        extends ACollector
+        implements ICollector<AppliedClusterResourceQuotas> {
 
     @Override
     public List<AppliedClusterResourceQuotas> collect(OpenShiftClient openShiftClient, String[] namespaces) {
