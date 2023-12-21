@@ -24,7 +24,7 @@ import java.util.stream.Stream;
 @Slf4j
 public class ClusterResourceQuotasCollector extends ACollector implements ICollector<ClusterResourceQuotas> {
 
-    @ConfigProperty(name = "extractor.crq-selector-prefixes")
+    @ConfigProperty(name = "extractor.crq-selector-prefix")
     String SELECTOR_PREFIX;
 
     @Override
