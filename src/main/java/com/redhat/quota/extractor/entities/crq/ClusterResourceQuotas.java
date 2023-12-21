@@ -17,7 +17,7 @@ import java.util.List;
 public class ClusterResourceQuotas extends ExtractorEntity {
     String cluster;
     String clusterResourceQuotaName;
-    String requestID;
+    String orderId;
     BigDecimal limitsCPU;
     BigDecimal requestMemory;
     BigDecimal usedLimitCPU;

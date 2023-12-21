@@ -60,7 +60,8 @@ public class ClusterResourceQuotasCollector extends ACollector implements IColle
         ClusterResourceQuotasBuilder builder = fromSpec(metadata.getName(), clusterResourceQuota.getSpec())
                 .cluster(clusterUrl)
                 .labels(labels)
-                .annotations(annotations);
+                .annotations(annotations)
+                .orderId(metadata.getAnnotations().get(SELECTOR_PREFIX + "/orderid"));
         return new Tuple<>(builder, Optional.ofNullable(clusterResourceQuota.getStatus()));
     }
 
