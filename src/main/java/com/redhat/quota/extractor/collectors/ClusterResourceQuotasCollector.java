@@ -38,9 +38,6 @@ public class ClusterResourceQuotasCollector extends ACollector implements IColle
         Optional<Set<String>> labels();
     }
 
-    interface CRQ_IGNORE {
-    }
-
     @Override
     public List<ClusterResourceQuotas> collect(OpenShiftClient openShiftClient, String... namespaces) {
         log.info("START - collecting ClusterResourceQuotas for cluster={}", openShiftClient.getMasterUrl().toString());
@@ -65,24 +62,20 @@ public class ClusterResourceQuotasCollector extends ACollector implements IColle
             ClusterResourceQuota clusterResourceQuota
     ) {
         ObjectMeta metadata = clusterResourceQuota.getMetadata();
-        List<Labels> labels = new ArrayList<>() {
-            {
-                metadata.getLabels().forEach((k, v) -> {
-                    if (!extractorCrqIgnore.labels().orElseGet(Set::of).contains(k)) {
-                        this.add(Labels.builder().labelName(k).labelValue(v).build());
-                    }
-                });
-            }
-        };
-        List<Annotations> annotations = new ArrayList<>() {
-            {
-                metadata.getLabels().forEach((k, v) -> {
-                    if (!extractorCrqIgnore.annotations().orElseGet(Set::of).contains(k)) {
-                        this.add(Annotations.builder().annotationName(k).annotationValue(v).build());
-                    }
-                });
-            }
-        };
+        List<Labels> labels = new ArrayList<>() {{
+            metadata.getLabels().forEach((k, v) -> {
+                if (!extractorCrqIgnore.labels().orElseGet(Set::of).contains(k)) {
+                    this.add(Labels.builder().labelName(k).labelValue(v).build());
+                }
+            });
+        }};
+        List<Annotations> annotations = new ArrayList<>() {{
+            metadata.getLabels().forEach((k, v) -> {
+                if (!extractorCrqIgnore.annotations().orElseGet(Set::of).contains(k)) {
+                    this.add(Annotations.builder().annotationName(k).annotationValue(v).build());
+                }
+            });
+        }};
         ClusterResourceQuotasBuilder builder = fromSpec(clusterResourceQuota.getSpec())
                 .clusterResourceQuotaName(metadata.getName())
                 .cluster(clusterUrl)
@@ -131,6 +124,5 @@ public class ClusterResourceQuotasCollector extends ACollector implements IColle
                 .usedPods(CollectorsUtils.getNumericalAmountOrNull(used, "pods"))
                 .usedSecrets(CollectorsUtils.getNumericalAmountOrNull(used, "secrets"));
     }
-
 
 }
