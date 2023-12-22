@@ -25,12 +25,12 @@ public class JobRunnerService {
     @Scheduled(cron = "${extractor.job.schedule.time: 0 0 23 * * ?}")
     void schedule() {
         log.info("quota extractor wakeup");
-        prepareForJob();
         doJob();
         log.info("quota extractor sleep");
     }
 
     public void doJob() {
+        prepareForJob();
         Multi.createFrom()
                 .items(clientConfigService.getConfigsForClusters())
                 .emitOn(Infrastructure.getDefaultWorkerPool())

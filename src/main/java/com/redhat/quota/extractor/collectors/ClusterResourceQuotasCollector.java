@@ -12,7 +12,9 @@ import io.fabric8.openshift.api.model.ClusterResourceQuotaSelector;
 import io.fabric8.openshift.api.model.ClusterResourceQuotaSpec;
 import io.fabric8.openshift.api.model.ClusterResourceQuotaStatus;
 import io.fabric8.openshift.client.OpenShiftClient;
+import io.smallrye.config.ConfigMapping;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
@@ -26,6 +28,18 @@ public class ClusterResourceQuotasCollector extends ACollector implements IColle
 
     @ConfigProperty(name = "extractor.crq-selector-prefix")
     String SELECTOR_PREFIX;
+
+    @Inject
+    ExtractorCrqIgnore extractorCrqIgnore;
+
+    @ConfigMapping(prefix = "extractor.crq-ignore")
+    interface ExtractorCrqIgnore {
+        Optional<Set<String>> annotations();
+        Optional<Set<String>> labels();
+    }
+
+    interface CRQ_IGNORE {
+    }
 
     @Override
     public List<ClusterResourceQuotas> collect(OpenShiftClient openShiftClient, String... namespaces) {
@@ -51,13 +65,24 @@ public class ClusterResourceQuotasCollector extends ACollector implements IColle
             ClusterResourceQuota clusterResourceQuota
     ) {
         ObjectMeta metadata = clusterResourceQuota.getMetadata();
-        List<Labels> labels = new ArrayList<>() {{
-            metadata.getLabels().forEach((k,v) -> this.add(Labels.builder().labelName(k).labelValue(v).build()));
-        }};
-        List<Annotations> annotations = new ArrayList<>() {{
-            metadata.getAnnotations().forEach((k,v) ->
-                    this.add(Annotations.builder().annotationName(k).annotationValue(v).build()));
-        }};
+        List<Labels> labels = new ArrayList<>() {
+            {
+                metadata.getLabels().forEach((k, v) -> {
+                    if (!extractorCrqIgnore.labels().orElseGet(Set::of).contains(k)) {
+                        this.add(Labels.builder().labelName(k).labelValue(v).build());
+                    }
+                });
+            }
+        };
+        List<Annotations> annotations = new ArrayList<>() {
+            {
+                metadata.getLabels().forEach((k, v) -> {
+                    if (!extractorCrqIgnore.annotations().orElseGet(Set::of).contains(k)) {
+                        this.add(Annotations.builder().annotationName(k).annotationValue(v).build());
+                    }
+                });
+            }
+        };
         ClusterResourceQuotasBuilder builder = fromSpec(clusterResourceQuota.getSpec())
                 .clusterResourceQuotaName(metadata.getName())
                 .cluster(clusterUrl)
