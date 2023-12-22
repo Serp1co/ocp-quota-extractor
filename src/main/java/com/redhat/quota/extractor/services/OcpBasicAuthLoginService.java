@@ -12,6 +12,7 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
+import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 
 import java.net.URI;
 import java.util.Base64;
