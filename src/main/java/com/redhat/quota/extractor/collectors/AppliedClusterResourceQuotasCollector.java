@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @ApplicationScoped
 @Slf4j
@@ -22,8 +23,8 @@ public class AppliedClusterResourceQuotasCollector extends ACollector
                 .flatMap(ns -> openShiftClient.quotas()
                         .appliedClusterResourceQuotas()
                         .inNamespace(ns).list().getItems().stream()
-                        .map(clusterResourceQuota -> AppliedClusterResourceQuotas.builder()
-                                .clusterResourceQuotaName(clusterResourceQuota.getMetadata().getName())
+                        .map(appliedClusterResourceQuota -> AppliedClusterResourceQuotas.builder()
+                                .clusterResourceQuotaName(appliedClusterResourceQuota.getMetadata().getName())
                                 .cluster(masterUrl)
                                 .namespace(ns)
                                 .build()))
