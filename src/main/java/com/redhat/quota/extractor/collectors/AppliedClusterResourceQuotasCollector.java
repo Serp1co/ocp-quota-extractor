@@ -11,8 +11,7 @@ import java.util.stream.Collectors;
 
 @ApplicationScoped
 @Slf4j
-public class AppliedClusterResourceQuotasCollector
-        extends ACollector
+public class AppliedClusterResourceQuotasCollector extends ACollector
         implements ICollector<AppliedClusterResourceQuotas> {
 
     @Override

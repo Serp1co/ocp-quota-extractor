@@ -82,9 +82,9 @@ public class NodesCollector extends ACollector implements ICollector<Nodes> {
                     .cpu(CollectorsUtils.getNumericalAmountOrNull(map, "cpu"))
                     .pods(CollectorsUtils.getNumericalAmountOrNull(map, "pods"))
                     .ephemeralStorage(CollectorsUtils.getNumericalAmountOrNull(map, "ephemeral-storage",
-                            CollectorsUtils::fromKibToMib))
+                            CollectorsUtils::fromBToMib))
                     .memory(CollectorsUtils.getNumericalAmountOrNull(map, "memory",
-                            CollectorsUtils::fromKibToMib))
+                            CollectorsUtils::fromBToMib))
                     .build();
         }
     }

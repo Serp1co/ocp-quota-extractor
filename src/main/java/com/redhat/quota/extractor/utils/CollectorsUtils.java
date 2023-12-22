@@ -9,8 +9,9 @@ import java.util.function.Function;
 
 public interface CollectorsUtils {
 
-    static BigDecimal fromKibToMib(BigDecimal value) {
-        return value.divide(BigDecimal.valueOf(1024), RoundingMode.DOWN);
+    static BigDecimal fromBToMib(BigDecimal value) {
+        return value.divide(BigDecimal.valueOf(1024), RoundingMode.DOWN)
+                .divide(BigDecimal.valueOf(1024), RoundingMode.DOWN);
     }
 
     static BigDecimal getNumericalAmountOrNull(Map<String, Quantity> quantityMap, String key) {
