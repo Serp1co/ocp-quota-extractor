@@ -3,6 +3,7 @@ package com.redhat.quota.extractor.actuation;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import lombok.extern.java.Log;
+import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
@@ -16,7 +17,7 @@ import java.sql.SQLException;
  */
 @Readiness
 @ApplicationScoped
-@Log
+@Slf4j
 public class DbConnectionHealthCheck implements HealthCheck {
 
     @Inject
@@ -29,7 +30,7 @@ public class DbConnectionHealthCheck implements HealthCheck {
             dataSource.getConnection();
             responseBuilder.up();
         } catch (SQLException e) {
-            log.severe("ready health check: database connection error, SQLSTATE=" +
+            log.error("ready health check: database connection error, SQLSTATE=" +
                     e.getSQLState() + ", SQLCODE=" + e.getErrorCode());
             responseBuilder.down();
         }

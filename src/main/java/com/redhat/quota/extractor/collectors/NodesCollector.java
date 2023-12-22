@@ -23,13 +23,14 @@ public class NodesCollector extends ACollector implements ICollector<Nodes> {
     @Override
     public List<Nodes> collect(OpenShiftClient openShiftClient, String... namespaces) {
         String clusterUrl = openShiftClient.getMasterUrl().toString();
-        log.info("Collecting Nodes for cluster={}", clusterUrl);
+        log.info("START - collecting Nodes for cluster={}", clusterUrl);
         List<Node> nodeList = openShiftClient.nodes().list().getItems();
         Stream<Tuple<Tuple<Capacity, Capacity>, String>> nodesInfo =
                 getOcpNodesInfo(nodeList);
         List<Nodes> nodesStream = mapNodesInfo(nodesInfo, clusterUrl)
                 .collect(Collectors.toList());
         persist(nodesStream);
+        log.info("END - collecting Nodes for cluster={}", clusterUrl);
         return nodesStream;
     }
 

@@ -17,15 +17,16 @@ public class NamespacesCollector extends ACollector implements ICollector<Namesp
 
     @Override
     public List<Namespaces> collect(OpenShiftClient openShiftClient, String... namespaces) {
+        log.info("START - collecting Namespaces for cluster={}", openShiftClient.getMasterUrl().toString());
         List<Namespaces> namespacesStream = getOcpNamespacesToNamespace(openShiftClient)
                 .collect(Collectors.toList());
         persist(namespacesStream);
+        log.info("END - collecting Namespaces for cluster={}", openShiftClient.getMasterUrl().toString());
         return namespacesStream;
     }
 
     Stream<Namespaces> getOcpNamespacesToNamespace(OpenShiftClient ocpClient) {
         String masterUrl = ocpClient.getMasterUrl().toString();
-        log.info("collecting Namespaces for cluster {}", masterUrl);
         return ocpClient.namespaces().list().getItems().stream()
                 .map(Namespace::getMetadata)
                 .map(ObjectMeta::getName)

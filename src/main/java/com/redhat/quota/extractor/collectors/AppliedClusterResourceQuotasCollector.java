@@ -18,7 +18,7 @@ public class AppliedClusterResourceQuotasCollector
     @Override
     public List<AppliedClusterResourceQuotas> collect(OpenShiftClient openShiftClient, String[] namespaces) {
         String masterUrl = openShiftClient.getMasterUrl().toString();
-        log.info("collecting AppliedClusterResourceQuotasCollector for cluster {}", masterUrl);
+        log.info("START - collecting AppliedClusterResourceQuotasCollector for cluster={}", masterUrl);
         List<AppliedClusterResourceQuotas> appliedClusterResourceQuotasList = Arrays.stream(namespaces)
                 .flatMap(ns -> openShiftClient.quotas()
                         .appliedClusterResourceQuotas()
@@ -30,6 +30,7 @@ public class AppliedClusterResourceQuotasCollector
                                 .build()))
                 .collect(Collectors.toList());
         persist(appliedClusterResourceQuotasList);
+        log.info("END - collecting AppliedClusterResourceQuotasCollector for cluster={}", masterUrl);
         return appliedClusterResourceQuotasList;
     }
 

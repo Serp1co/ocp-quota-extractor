@@ -31,7 +31,6 @@ public class JobRunnerService {
     }
 
     public void doJob() {
-        log.info("full collection job start");
         Multi.createFrom()
                 .items(clientConfigService.getConfigsForClusters())
                 .emitOn(Infrastructure.getDefaultWorkerPool())

@@ -29,15 +29,16 @@ public class ClusterResourceQuotasCollector extends ACollector implements IColle
 
     @Override
     public List<ClusterResourceQuotas> collect(OpenShiftClient openShiftClient, String... namespaces) {
+        log.info("START - collecting ClusterResourceQuotas for cluster={}", openShiftClient.getMasterUrl().toString());
         List<ClusterResourceQuotas> clusterResourceQuotasStream =
                 getClusterResourceQuotaStream(openShiftClient).collect(Collectors.toList());
         persist(clusterResourceQuotasStream);
+        log.info("END - collecting ClusterResourceQuotas for cluster={}", openShiftClient.getMasterUrl().toString());
         return clusterResourceQuotasStream;
     }
 
     Stream<ClusterResourceQuotas> getClusterResourceQuotaStream(OpenShiftClient ocpClient) {
         String masterUrl = ocpClient.getMasterUrl().toString();
-        log.info("collecting ClusterResourceQuotas for cluster {}", masterUrl);
         List<ClusterResourceQuota> clusterResourceQuotaList =
                 ocpClient.quotas().clusterResourceQuotas().list().getItems();
         return clusterResourceQuotaList.stream().parallel()
